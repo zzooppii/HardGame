@@ -186,13 +186,30 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     onStartGame();
   };
 
-  // 링크 복사
+  // 링크 복사 (localhost인 경우 실제 접속 가능한 로컬 네트워크 IP 반영)
+  const getShareableUrl = (code: string) => {
+    let host = window.location.host;
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // 로컬 네트워크 IP 우선 반영 (현재 공유기 할당 IP: 192.168.0.18)
+      host = `192.168.0.18:${window.location.port || '5173'}`;
+    }
+    return `${window.location.protocol}//${host}${window.location.pathname}?room=${code}`;
+  };
+
   const handleCopyLink = () => {
     const code = createdRoomCode || inputRoomCode;
-    const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
+    const url = getShareableUrl(code);
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const handleCopyCodeOnly = () => {
+    const code = createdRoomCode || inputRoomCode;
+    navigator.clipboard.writeText(code);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   // 솔로 / 로컬 시작
@@ -506,12 +523,23 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
                 <button
                   className="btn-secondary"
+                  onClick={handleCopyCodeOnly}
+                  style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+                >
+                  {copiedCode ? <Check size={14} color="#4ade80" /> : <Copy size={14} />}
+                  {copiedCode ? '방 코드 복사됨!' : '방 코드만 복사'}
+                </button>
+                <button
+                  className="btn-gold"
                   onClick={handleCopyLink}
                   style={{ fontSize: '0.8rem', padding: '6px 14px' }}
                 >
-                  {copiedLink ? <Check size={14} color="#4ade80" /> : <Copy size={14} />}
-                  {copiedLink ? '초대 링크 복사됨!' : '초대 링크 복사'}
+                  {copiedLink ? <Check size={14} color="#166534" /> : <Copy size={14} />}
+                  {copiedLink ? '링크 복사됨!' : '초대 링크 복사'}
                 </button>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                💡 같은 Wi-Fi에 연결된 스마트폰이나 PC에서 링크를 열면 즉시 접속됩니다!
               </div>
             </div>
 

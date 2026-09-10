@@ -21,7 +21,11 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
 
   const handleCopyInvite = () => {
     if (!roomCode) return;
-    const url = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+    let host = window.location.host;
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      host = `192.168.0.18:${window.location.port || '5173'}`;
+    }
+    const url = `${window.location.protocol}//${host}${window.location.pathname}?room=${roomCode}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
