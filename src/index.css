@@ -173,3 +173,65 @@ body {
 .glow-gold {
   box-shadow: 0 0 15px var(--gold-glow);
 }
+
+/* Mobile Responsive Breakpoints */
+@media (max-width: 768px) {
+  .game-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .game-header-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+  }
+
+  .header-controls-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .mid-board-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .player-mat-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .role-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .market-scroll-row {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 6px !important;
+  }
+
+  .player-header-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .player-stats-row {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .btn-gold, .btn-secondary {
+    padding: 8px 14px !important;
+    font-size: 0.82rem !important;
+  }
+}

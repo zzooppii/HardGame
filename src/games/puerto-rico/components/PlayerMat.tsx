@@ -85,40 +85,40 @@ export const PlayerMat: React.FC = () => {
         }}
       >
         {/* 플레이어 상태 헤더 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h3 className="font-serif" style={{ fontSize: '1.2rem', color: '#f8fafc', margin: 0 }}>
+        <div className="player-header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <h3 className="font-serif" style={{ fontSize: '1.1rem', color: '#f8fafc', margin: 0 }}>
               {selectedPlayer.name}의 식민 영지
             </h3>
             {isGovernor && (
-              <span className="badge badge-gold">👑 현재 총독(Governor)</span>
+              <span className="badge badge-gold" style={{ fontSize: '0.72rem' }}>👑 총독</span>
             )}
             {isTurn && (
-              <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8' }}>
-                현재 턴 진행 중
+              <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', fontSize: '0.72rem' }}>
+                진행 중
               </span>
             )}
           </div>
 
           {/* 자원 요약 바 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.4)', padding: '5px 10px', borderRadius: '6px' }}>
-              <Coins size={16} color="var(--gold-primary)" />
-              <span style={{ fontWeight: 700, color: 'var(--gold-primary)', fontSize: '0.9rem' }}>
+          <div className="player-stats-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '6px' }}>
+              <Coins size={14} color="var(--gold-primary)" />
+              <span style={{ fontWeight: 700, color: 'var(--gold-primary)', fontSize: '0.82rem' }}>
                 {selectedPlayer.doubloons} 두블론
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.4)', padding: '5px 10px', borderRadius: '6px' }}>
-              <Trophy size={16} color="#38bdf8" />
-              <span style={{ fontWeight: 700, color: '#38bdf8', fontSize: '0.9rem' }}>
-                {selectedPlayer.vpChips} VP 칩
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '6px' }}>
+              <Trophy size={14} color="#38bdf8" />
+              <span style={{ fontWeight: 700, color: '#38bdf8', fontSize: '0.82rem' }}>
+                {selectedPlayer.vpChips} VP
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.4)', padding: '5px 10px', borderRadius: '6px' }}>
-              <Users size={16} color="#a855f7" />
-              <span style={{ fontWeight: 700, color: '#d8b4fe', fontSize: '0.9rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '6px' }}>
+              <Users size={14} color="#a855f7" />
+              <span style={{ fontWeight: 700, color: '#d8b4fe', fontSize: '0.82rem' }}>
                 대기 일꾼: {selectedPlayer.unassignedColonists}명
               </span>
             </div>
@@ -126,7 +126,7 @@ export const PlayerMat: React.FC = () => {
         </div>
 
         {/* 3. 영지 보드 그리드 (좌: 섬 구역 12칸 / 우: 도시 구역 12칸) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px' }}>
+        <div className="player-mat-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '16px' }}>
           
           {/* 3-1. 섬 구역 (농장 & 채석장 12칸) */}
           <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -341,7 +341,7 @@ export const PlayerMat: React.FC = () => {
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '14px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {(Object.keys(selectedPlayer.goods) as GoodType[]).map(g => (
               <div 
                 key={g} 

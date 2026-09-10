@@ -32,88 +32,86 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '16px 24px', maxWidth: '1600px', margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '12px 14px', maxWidth: '1600px', margin: '0 auto' }}>
       
       {/* 상단 네비게이션 & 제어 바 */}
-      <header style={{
+      <header className="game-header-bar" style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '12px 20px',
+        padding: '12px 18px',
         borderRadius: '12px',
-        background: 'rgba(22, 27, 34, 0.8)',
+        background: 'rgba(22, 27, 34, 0.85)',
         backdropFilter: 'blur(12px)',
         border: '1px solid var(--amber-border)',
-        marginBottom: '20px'
+        marginBottom: '16px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button 
-            className="btn-secondary" 
-            onClick={onBackToLobby}
-            style={{ padding: '8px 14px' }}
-          >
-            <ArrowLeft size={16} /> 로비로 나가기
-          </button>
-          
-          <div>
-            <h1 className="font-serif text-gold-gradient" style={{ fontSize: '1.3rem', margin: 0 }}>
-              푸에르토리코 (Puerto Rico)
-            </h1>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              17세기 카리브해 식민지 개척 & 경영 마스터피스
-            </span>
-          </div>
-        </div>
-
-        {/* 중앙: 라운드 및 온라인 상태 표시 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="badge badge-gold" style={{ fontSize: '0.9rem', padding: '6px 14px' }}>
-            라운드 {round}
+        {/* 1열/좌측: 로비 나가기 & 게임 제목 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button 
+              className="btn-secondary" 
+              onClick={onBackToLobby}
+              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+            >
+              <ArrowLeft size={15} /> 로비
+            </button>
+            
+            <div>
+              <h1 className="font-serif text-gold-gradient" style={{ fontSize: '1.15rem', margin: 0 }}>
+                푸에르토리코
+              </h1>
+            </div>
           </div>
 
+          {/* 모바일에서 방 코드 배지 */}
           {playMode === 'online' && roomCode && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="badge" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid #c084fc', fontSize: '0.85rem' }}>
-                🌐 방 코드: {roomCode}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="badge" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid #c084fc', fontSize: '0.78rem' }}>
+                방: {roomCode}
               </span>
               <button 
                 className="btn-secondary" 
                 onClick={handleCopyInvite}
-                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                style={{ padding: '3px 8px', fontSize: '0.72rem' }}
               >
-                {copied ? '✓ 복사됨' : '초대 링크 복사'}
+                {copied ? '✓' : '초대'}
               </button>
             </div>
           )}
-
-          {playMode === 'online' && !isMyTurn && (
-            <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid #f87171', animation: 'pulse 1.5s infinite' }}>
-              ⏳ {currTurnPlayer?.name}님이 생각 중...
-            </span>
-          )}
         </div>
 
-        {/* 우측 도구: 재시작 & 규칙 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* 2열/중앙 및 우측: 라운드, 턴 상태, 규칙 & 다시시작 */}
+        <div className="header-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="badge badge-gold" style={{ fontSize: '0.82rem', padding: '4px 10px' }}>
+            라운드 {round}
+          </div>
+
+          {playMode === 'online' && !isMyTurn && (
+            <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid #f87171', fontSize: '0.78rem' }}>
+              ⏳ {currTurnPlayer?.name} 행동 중
+            </span>
+          )}
+
           <button 
             className="btn-secondary" 
             onClick={() => setShowRulesModal(true)}
-            style={{ padding: '8px 14px' }}
+            style={{ padding: '6px 10px', fontSize: '0.78rem' }}
           >
-            <HelpCircle size={16} color="var(--gold-secondary)" /> 규칙 설명
+            <HelpCircle size={14} color="var(--gold-secondary)" /> 규칙
           </button>
           <button 
             className="btn-secondary" 
             onClick={() => initGame(3, true)}
-            style={{ padding: '8px 14px' }}
+            style={{ padding: '6px 10px', fontSize: '0.78rem' }}
           >
-            <RotateCcw size={16} /> 다시 시작
+            <RotateCcw size={14} /> 재시작
           </button>
         </div>
       </header>
 
       {/* 본문 게임 인터페이스 */}
-      <main style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', flex: 1, alignItems: 'start' }}>
+      <main className="game-layout-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '16px', flex: 1, alignItems: 'start' }}>
         
         {/* 좌측 메인 보드 + 개인 영지판 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

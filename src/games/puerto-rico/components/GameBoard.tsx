@@ -50,11 +50,14 @@ export const GameBoard: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', 
-          gap: '12px' 
-        }}>
+        <div 
+          className="role-cards-grid"
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+            gap: '10px' 
+          }}
+        >
           {roleCards.map(rc => {
             const roleDef = ROLES_DATA[rc.role];
             const isSelected = rc.selectedByPlayerId !== null;
@@ -152,7 +155,7 @@ export const GameBoard: React.FC = () => {
       </div>
 
       {/* 2. 중단: 항구(화물선 3척) & 상점 & 공급처 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 1.1fr', gap: '16px' }}>
+      <div className="mid-board-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 1.1fr', gap: '14px' }}>
         
         {/* 2-1. 항구 (화물선 3척) */}
         <div className="glass-panel" style={{ padding: '16px 20px' }}>
@@ -320,20 +323,20 @@ export const GameBoard: React.FC = () => {
       </div>
 
       {/* 3. 하단: 개척자 오픈 농장 마켓 (오픈된 타일들) */}
-      <div className="glass-panel" style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '1.2rem' }}>🌱</span>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#f8fafc' }}>
+      <div className="glass-panel" style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.1rem' }}>🌱</span>
+            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#f8fafc' }}>
               오픈된 농장 시장 (Plantation Market)
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              개척자 페이즈 시 선택 가능한 타일입니다
-            </div>
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            개척자 선택 가능 타일
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="market-scroll-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           {plantationMarket.map((pType, idx) => {
             const isQuarry = pType === 'quarry';
             const meta = !isQuarry ? GOODS_DATA[pType as GoodType] : null;
