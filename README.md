@@ -1,32 +1,100 @@
-# React + TypeScript + Vite
+# 🎲 Euro Masterpieces (명작 유로 보드게임 웹 플랫폼)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> **보드게임 긱(BGG) 역사상 가장 위대한 6대 전략 보드게임을 웹 브라우저에서 직접 즐길 수 있는 모듈식 온라인 보드게임 플랫폼입니다.**
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 프로젝트 개요
 
-## React Compiler
+`Euro Masterpieces`는 정교한 경제 엔진과 치밀한 수싸움으로 전 세계 보드게이머들의 사랑을 받는 6종의 명작 유로 게임을 한 플랫폼에서 선택하여 즐길 수 있도록 구축된 웹 애플리케이션입니다.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **1인 솔로 모드 (스마트 AI 봇 대전)**
+- **로컬 패스 앤 플레이 (한 기기에서 교대 플레이)**
+- **온라인 실시간 멀티플레이 (WebRTC P2P 기반 방 개설 및 링크 초대)**
+- **모바일 반응형 완벽 지원 (아이폰, 갤럭시 등 스마트폰 뷰포트 최적화)**
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## 🗺️ 6대 게임 개발 로드맵
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+| 단계 | 게임명 (원제) | 디자이너 | 핵심 메커니즘 | 상태 |
+| :---: | :--- | :---: | :--- | :---: |
+| **1단계** | **푸에르토리코** *(Puerto Rico)* | Andreas Seyfarth | 역할 선택, 농장 경영, 도시 건설, 상품 선적 | **✅ 완성 (플레이 가능)** |
+| **2단계** | **버건디의 성** *(The Castles of Burgundy)* | Stefan Feld | 주사위 드래프트, 타일 배치, 영지 개발 | 🔄 순차 개발 예정 |
+| **3단계** | **르아브르** *(Le Havre)* | Uwe Rosenberg | 원자재 누적, 건물 매입 및 가공, 항구 물류 | 🔄 순차 개발 예정 |
+| **4단계** | **카베르나: 동굴 농부들** *(Caverna)* | Uwe Rosenberg | 일꾼 놓기, 동굴 발굴, 목축/농경, 무기 제작 | 🔄 순차 개발 예정 |
+| **5단계** | **아르낙의 잊혀진 유적** *(Lost Ruins of Arnak)* | Mín & Elwen | 덱 빌딩, 일꾼 놓기, 유적 탐사, 수호자 격퇴 | 🔄 순차 개발 예정 |
+| **6단계** | **테라포밍 마스** *(Terraforming Mars)* | Jacob Fryxelius | 카드 엔진 빌딩, 육각 타일 배치, 파라미터 조작 | 🔄 순차 개발 예정 |
+
+---
+
+## 🌴 1단계: 푸에르토리코 (Puerto Rico) 상세 구현
+
+17세기 카리브해의 지사가 되어 대농장과 도시를 번영시키고 유럽으로 상품을 선적하여 승점을 획득하는 명작 게임입니다.
+
+### 🎮 주요 구현 기능
+1. **7대 역할(Role) 선택 & 특권 시스템**:
+   - 개척자(Settler), 시장(Mayor), 건축가(Builder), 감독관(Craftsman), 상인(Trader), 선장(Captain), 금광부(Prospector)
+   - 선택되지 않은 역할 카드에 매 라운드 1두블론씩 누적되는 공식 룰 완벽 반영
+   - 선택자 고유 특권(채석장 선택, 추가 일꾼, 1원 할인, 추가 작물 획득, 판매가 +1원, 첫 선적 +1 VP 등)
+2. **개인 영지판 (Player Mat)**:
+   - **섬 구역 (12칸)**: 5종 작물 농장(옥수수, 인디고, 설탕, 담배, 커피) 및 채석장(Quarry) 배치
+   - **도시 구역 (12칸)**: 생산 가공 공장 및 특수 보라색 건물 + 대형 승점 건물 23종 완벽 지원
+   - **일꾼(이주민) 탑재 & 원클릭 최적 자동 배치**: 일꾼이 탑재된 시설만 작동하는 공식 룰 및 원클릭 자동 배치 지원
+3. **중앙 항구 & 상점 공급처**:
+   - **화물선 3척**: 용량별 선적 슬롯, 단일 작물 선적 규정, 만선 출항 비우기, 보관 한도 초과 폐기(창고 룰) 적용
+   - **상점 (Trading House)**: 4칸 한정, 중복 상품 판매 금지 및 사무소(Office) 특수 효과
+   - **공용 공급처**: 이주민 배, 공급처 풀, 5종 작물 재고, 승점(VP) 칩
+4. **온라인 실시간 멀티플레이 (P2P)**:
+   - 별도 회원가입 없이 5자리 방 코드(예: `VGRV2`) 및 초대 링크로 즉시 접속
+   - 호스트-클라이언트 간 0.1초 미만 초고속 실시간 턴/상태 동기화
+5. **모바일 반응형 UI**:
+   - 아이폰, 갤럭시 등 스마트폰 세로 화면에서도 찌그러짐 없는 2열 카드 및 1열 수직 스택 최적화
+
+---
+
+## 🛠️ 기술 스택
+
+- **Frontend**: React 19, TypeScript, Vite
+- **State Management**: Zustand
+- **Networking (P2P)**: PeerJS (WebRTC DataChannel)
+- **Styling**: Vanilla CSS Design System (다크 우드 & 앰버 골드 럭셔리 유로 테마)
+- **Icons & FX**: Lucide React, Canvas Confetti
+
+---
+
+## 🚀 로컬 실행 방법
+
+### 1. 저장소 클론 및 패키지 설치
+```bash
+git clone https://github.com/zzooppii/HardGame.git
+cd HardGame
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 2. 로컬 개발 서버 실행
+```bash
+npm run dev
+```
+- 로컬 브라우저: `http://localhost:5173/`
+- 동일 Wi-Fi(모바일/타 PC): 터미널에 표시되는 네트워크 IP (예: `http://192.168.0.x:5173/`)
+
+### 3. 프로덕션 빌드
+```bash
+npm run build
+```
+
+---
+
+## 👥 멀티플레이 이용 방법
+
+1. 메인 로비에서 **푸에르토리코 > [게임 시작 (솔로 / 멀티)]** 클릭
+2. **"온라인 멀티"** 탭 선택 후 닉네임 입력 및 **"방 개설하기"** 클릭
+3. 생성된 **초대 링크** 또는 **방 코드**를 친구에게 전달 (같은 Wi-Fi 접속 시 모바일 링크 지원)
+4. 친구가 대기실에 입장하면 **"멀티플레이 대전 시작하기"**를 눌러 실시간 대전 시작!
+
+---
+
+## 📄 라이선스
+
+This project is created for personal study and portfolio purposes. Board game rules and concepts belong to their respective designers and publishers.
