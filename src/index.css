@@ -1,0 +1,175 @@
+:root {
+  --font-serif: 'Cinzel', Georgia, serif;
+  --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Color Palette: Euro Boardgame Luxury */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-card: rgba(26, 32, 44, 0.85);
+  --bg-card-hover: rgba(35, 43, 58, 0.95);
+  --bg-wood: #2a1b12;
+  
+  --gold-primary: #e5a93c;
+  --gold-secondary: #f3c766;
+  --gold-glow: rgba(229, 169, 60, 0.35);
+  --gold-dark: #8a6016;
+
+  --amber-border: rgba(229, 169, 60, 0.25);
+  --amber-border-bright: rgba(243, 199, 102, 0.6);
+  
+  --caribbean-blue: #1e4a66;
+  --caribbean-teal: #14b8a6;
+  --plantation-green: #2e7d32;
+  --crimson-accent: #c0392b;
+
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-gold: #fcd34d;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --glass-reflection: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+  --shadow-luxury: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(229, 169, 60, 0.08);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+  background-image: 
+    radial-gradient(circle at 20% 15%, rgba(229, 169, 60, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 80% 85%, rgba(20, 184, 166, 0.05) 0%, transparent 45%),
+    linear-gradient(to bottom, #090d12 0%, #111720 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #090d12;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3443;
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-dark);
+}
+
+/* Typography Utilities */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.text-gold {
+  color: var(--gold-primary);
+}
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, #fff0c7 0%, #f3c766 50%, #c2881b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Buttons */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-family: var(--font-sans);
+  background: linear-gradient(135deg, #f5cc76 0%, #d49527 100%);
+  color: #1a1003;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 14px rgba(212, 149, 39, 0.4);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+.btn-gold:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 149, 39, 0.6);
+  filter: brightness(1.08);
+}
+.btn-gold:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn-gold:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--amber-border);
+}
+
+/* Glass Card */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--amber-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-luxury);
+}
+
+/* Chips / Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.badge-gold {
+  background: rgba(229, 169, 60, 0.15);
+  color: var(--gold-secondary);
+  border: 1px solid var(--amber-border);
+}
+.badge-soon {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* Glow effects */
+.glow-gold {
+  box-shadow: 0 0 15px var(--gold-glow);
+}
