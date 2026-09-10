@@ -179,7 +179,12 @@ class PeerNetworkManager {
 
       case 'START_GAME':
         if (this.onGameStart) {
-          this.onGameStart(msg.payload.initialState, msg.payload.myAssignedPlayerId);
+          let myAssigned = msg.payload.myAssignedPlayerId;
+          if (!myAssigned && msg.payload.playerMappings) {
+            const match = msg.payload.playerMappings.find((m: any) => m.peerId === this.myPeerId);
+            if (match) myAssigned = match.assignedPlayerId;
+          }
+          this.onGameStart(msg.payload.initialState, myAssigned || 'p-1');
         }
         break;
 

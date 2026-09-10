@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { peerManager } from '../network/peerManager';
 import type { LobbyPlayer } from '../network/peerManager';
-import { usePuertoRicoStore } from '../../games/puerto-rico/store/usePuertoRicoStore';
+import { usePuertoRicoStore, getSerializableGameState } from '../../games/puerto-rico/store/usePuertoRicoStore';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
 
 interface GameSetupModalProps {
@@ -160,30 +160,42 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
 
   // 호스트: 온라인 게임 시작
   const handleStartOnlineGame = () => {
-    if (!peerManager.isHost || !createdRoomCode) return;
-
-    const humanPlayers = lobbyPlayers.map(p => ({
-      name: p.name,
-      peerId: p.peerId
-    }));
-
-    initOnlineGame(playerCount, humanPlayers, createdRoomCode, 'p-0', true);
-
-    // 전체 참가자들에게 시작 알림 및 초기 상태 전송
-    lobbyPlayers.forEach((p) => {
-      if (!p.isHost) {
-        peerManager.sendToClient(p.peerId, {
-          type: 'START_GAME',
-          payload: {
-            initialState: usePuertoRicoStore.getState(),
-            myAssignedPlayerId: p.assignedPlayerId
-          },
-          senderId: peerManager.myPeerId || 'host'
-        });
+    try {
+      const roomCode = createdRoomCode || inputRoomCode;
+      if (!roomCode) {
+        console.error('방 코드가 존재하지 않습니다.');
+        return;
       }
-    });
 
-    onStartGame();
+      const humanPlayers = lobbyPlayers.map(p => ({
+        name: p.name,
+        peerId: p.peerId
+      }));
+
+      initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
+
+      // WebRTC로 전송 가능한 순수 JSON 상태 추출 (함수 제외)
+      const pureInitialState = getSerializableGameState(usePuertoRicoStore.getState());
+
+      // 전체 참가자들에게 시작 알림 및 초기 상태 전송
+      peerManager.broadcast({
+        type: 'START_GAME',
+        payload: {
+          initialState: pureInitialState,
+          playerMappings: lobbyPlayers.map(p => ({
+            peerId: p.peerId,
+            assignedPlayerId: p.assignedPlayerId
+          }))
+        },
+        senderId: peerManager.myPeerId || 'host'
+      });
+
+      onStartGame();
+    } catch (err) {
+      console.error('온라인 게임 시작 중 오류:', err);
+      // 오류가 발생하더라도 호스트 화면은 진입
+      onStartGame();
+    }
   };
 
   // 링크 복사 (localhost인 경우 실제 접속 가능한 로컬 네트워크 IP 반영)

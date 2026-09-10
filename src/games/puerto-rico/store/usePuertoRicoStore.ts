@@ -18,6 +18,30 @@ import { peerManager } from '../../../platform/network/peerManager';
 
 export type PlayMode = 'solo' | 'local_pass' | 'online';
 
+export function getSerializableGameState(state: PuertoRicoGameState): Partial<PuertoRicoGameState> {
+  return {
+    players: state.players,
+    governorIndex: state.governorIndex,
+    currentTurnPlayerIndex: state.currentTurnPlayerIndex,
+    currentRole: state.currentRole,
+    roleCards: state.roleCards,
+    round: state.round,
+    plantationMarket: state.plantationMarket,
+    quarrySupply: state.quarrySupply,
+    colonistShip: state.colonistShip,
+    colonistSupply: state.colonistSupply,
+    vpSupply: state.vpSupply,
+    goodsSupply: state.goodsSupply,
+    tradingHouse: state.tradingHouse,
+    cargoShips: state.cargoShips,
+    currentPhase: state.currentPhase,
+    playersCompletedAction: state.playersCompletedAction,
+    isGameOver: state.isGameOver,
+    endReason: state.endReason,
+    actionLogs: state.actionLogs
+  };
+}
+
 interface PuertoRicoStore extends PuertoRicoGameState {
   playMode: PlayMode;
   myPlayerId: string;
@@ -107,28 +131,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
 
   syncToPeers: () => {
     if (get().playMode === 'online' && get().isHost) {
-      const state = get();
-      peerManager.broadcastStateSync({
-        players: state.players,
-        governorIndex: state.governorIndex,
-        currentTurnPlayerIndex: state.currentTurnPlayerIndex,
-        currentRole: state.currentRole,
-        roleCards: state.roleCards,
-        round: state.round,
-        plantationMarket: state.plantationMarket,
-        quarrySupply: state.quarrySupply,
-        colonistShip: state.colonistShip,
-        colonistSupply: state.colonistSupply,
-        vpSupply: state.vpSupply,
-        goodsSupply: state.goodsSupply,
-        tradingHouse: state.tradingHouse,
-        cargoShips: state.cargoShips,
-        currentPhase: state.currentPhase,
-        playersCompletedAction: state.playersCompletedAction,
-        isGameOver: state.isGameOver,
-        endReason: state.endReason,
-        actionLogs: state.actionLogs
-      });
+      peerManager.broadcastStateSync(getSerializableGameState(get()));
     }
   },
 
