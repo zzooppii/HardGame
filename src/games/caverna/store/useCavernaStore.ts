@@ -22,13 +22,29 @@ import {
 import { CavernaAI } from '../engine/aiPlayer';
 import { soundManager } from '../../../utils/sound';
 import { showFeedback } from '../../../utils/feedback';
+import { peerManager } from '../../../platform/network/peerManager';
 
 interface CavernaStore extends CavernaGameState {
+  playMode: 'solo' | 'local_pass' | 'online';
+  myPlayerId: string;
+  isHost: boolean;
+  roomCode: string | null;
+
   selectedFurnishingForBuild: FurnishingTile | null;
   isExpeditionModalOpen: boolean;
   activeDwarfForExpedition: string | null;
 
   initGame: (playerCount?: number, withAI?: boolean) => void;
+  initOnlineGame: (
+    playerCount: number,
+    humanPlayers: { name: string; peerId: string }[],
+    roomCode: string,
+    myPlayerId: string,
+    isHost: boolean
+  ) => void;
+  syncRemoteState: (newState: Partial<CavernaGameState>) => void;
+  syncToPeers: () => void;
+
   performAction: (actionSpaceId: string, actionDetail?: any) => boolean;
   buildFurnishingAction: (furnishingId: string) => boolean;
   claimExpeditionLoot: (lootId: string) => void;
@@ -37,7 +53,38 @@ interface CavernaStore extends CavernaGameState {
   closeFurnishingModal: () => void;
 }
 
+export const getSerializableCavernaState = (state: CavernaStore): any => {
+  const {
+    round,
+    phase,
+    currentTurnPlayerIndex,
+    currentDwarfIndex,
+    players,
+    actionSpaces,
+    availableFurnishings,
+    logs,
+    isGameOver
+  } = state;
+
+  return JSON.parse(JSON.stringify({
+    round,
+    phase,
+    currentTurnPlayerIndex,
+    currentDwarfIndex,
+    players,
+    actionSpaces,
+    availableFurnishings,
+    logs,
+    isGameOver
+  }));
+};
+
 export const useCavernaStore = create<CavernaStore>((set, get) => ({
+  playMode: 'solo',
+  myPlayerId: 'p-0',
+  isHost: true,
+  roomCode: null,
+
   round: 1,
   phase: 'action',
   currentTurnPlayerIndex: 0,
@@ -69,10 +116,10 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
           wood: 1,
           stone: 0,
           ore: 0,
-          ruby: 1, // 시작 조커 루비 1개
-          grain: 1, // 시작 종자 곡물 1개
+          ruby: 1,
+          grain: 1,
           pumpkin: 0,
-          food: 4, // 시작 식량 4
+          food: 4,
           gold: 0
         },
         livestock: {
@@ -96,6 +143,10 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
     soundManager.playCargoLoad();
 
     set({
+      playMode: 'solo',
+      myPlayerId: 'p-0',
+      isHost: true,
+      roomCode: null,
       round: 1,
       phase: 'action',
       currentTurnPlayerIndex: 0,
@@ -111,8 +162,94 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
     });
   },
 
+  initOnlineGame: (playerCount, humanPlayers, roomCode, myPlayerId, isHost) => {
+    const colors = ['#0284c7', '#dc2626', '#16a34a', '#ca8a04'];
+    const players: PlayerCaverna[] = [];
+
+    for (let i = 0; i < playerCount; i++) {
+      const human = humanPlayers[i];
+      const name = human ? human.name : `AI 드워프 ${i + 1}`;
+      const isAI = !human;
+
+      players.push({
+        id: `p-${i}`,
+        name: name,
+        color: colors[i],
+        isAI: isAI,
+        resources: {
+          wood: 1,
+          stone: 0,
+          ore: 0,
+          ruby: 1,
+          grain: 1,
+          pumpkin: 0,
+          food: 4,
+          gold: 0
+        },
+        livestock: {
+          sheep: 0,
+          boar: 0,
+          cattle: 0,
+          donkey: 0
+        },
+        dwarfs: [
+          { id: `d-${i}-0`, name: '첫째 드워프', weaponLevel: 0, hasActedThisRound: false, placedActionId: null },
+          { id: `d-${i}-1`, name: '둘째 드워프', weaponLevel: 0, hasActedThisRound: false, placedActionId: null }
+        ],
+        caveBoard: createInitialCaveBoard(),
+        fieldBoard: createInitialFieldBoard(),
+        builtFurnishings: ['furn_entry_dwelling']
+      });
+    }
+
+    const freshActions = INITIAL_ACTION_SPACES.map(a => ({ ...a, occupiedByPlayerId: null }));
+
+    set({
+      playMode: 'online',
+      myPlayerId,
+      isHost,
+      roomCode,
+      round: 1,
+      phase: 'action',
+      currentTurnPlayerIndex: 0,
+      currentDwarfIndex: 0,
+      players,
+      actionSpaces: freshActions,
+      availableFurnishings: [...INITIAL_FURNISHINGS],
+      logs: [`🌐 [온라인 대전] 방 코드: ${roomCode} | 게임이 시작되었습니다!`],
+      isGameOver: false,
+      selectedFurnishingForBuild: null,
+      isExpeditionModalOpen: false,
+      activeDwarfForExpedition: null
+    });
+
+    if (isHost) {
+      setTimeout(() => {
+        get().syncToPeers();
+      }, 300);
+    }
+  },
+
+  syncRemoteState: (newState: Partial<CavernaGameState>) => {
+    set(state => ({
+      ...state,
+      ...newState
+    }));
+  },
+
+  syncToPeers: () => {
+    const { playMode, isHost } = get();
+    if (playMode === 'online' && isHost) {
+      const serializable = getSerializableCavernaState(get());
+      peerManager.broadcastStateSync(serializable);
+    }
+  },
+
   performAction: (actionSpaceId: string, actionDetail?: any) => {
     const { 
+      playMode,
+      isHost,
+      myPlayerId,
       players, 
       currentTurnPlayerIndex, 
       actionSpaces, 
@@ -122,6 +259,20 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
 
     if (isGameOver) return false;
 
+    // 온라인 게스트인 경우 액션 호스트에게 전달
+    if (playMode === 'online' && !isHost) {
+      const currP = players[currentTurnPlayerIndex];
+      if (currP.id !== myPlayerId) {
+        showFeedback('내 차례가 아닙니다.');
+        return false;
+      }
+      peerManager.sendAction('CAVERNA_PERFORM_ACTION', {
+        actionSpaceId,
+        actionDetail
+      }, myPlayerId);
+      return true;
+    }
+
     const currPlayer = players[currentTurnPlayerIndex];
     const actionSpace = actionSpaces.find(a => a.id === actionSpaceId);
     if (!actionSpace || actionSpace.occupiedByPlayerId !== null) {
@@ -129,7 +280,6 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
       return false;
     }
 
-    // 미행동 드워프 찾기
     const availableDwarf = currPlayer.dwarfs.find(d => !d.hasActedThisRound);
     if (!availableDwarf) {
       showFeedback('이번 라운드에 일할 수 있는 드워프가 없습니다.');
@@ -148,6 +298,15 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
     let updatedActionSpaces = [...actionSpaces];
     let actionLog = '';
 
+    // 사운드 효과 분기
+    if (actionSpace.id.includes('ore') || actionSpace.id.includes('cavern') || actionSpace.id.includes('excavat')) {
+      soundManager.playPickaxeMine();
+    } else if (actionSpace.id.includes('forest') || actionSpace.id.includes('wood') || actionSpace.id.includes('slash')) {
+      soundManager.playAxeChop();
+    } else {
+      soundManager.playClick();
+    }
+
     // 누적 자원 수령
     if (actionSpace.accumulatesResource) {
       const { resource } = actionSpace.accumulatesResource;
@@ -158,223 +317,178 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
         updatedPlayer.resources[resource as CavernaResource] += count;
       }
       actionLog = `${actionSpace.name}에서 ${resource} +${count}개 수확`;
-      soundManager.playCargoLoad();
+      updatedActionSpaces = updatedActionSpaces.map(a => a.id === actionSpaceId ? { ...a, accumulatedCount: 0 } : a);
     }
 
-    // 행동별 고유 로직 처리
-    switch (actionSpace.actionType) {
-      case 'logging':
-      case 'quarry':
-      case 'ore_mining':
-      case 'ruby_mining':
-      case 'sheep_farming':
-        // 누적 자원 수령 완료
-        break;
-
-      case 'slash_and_burn': {
-        const { updatedBoard, success } = slashAndBurn(updatedPlayer.fieldBoard);
+    // 특수 액션 로직
+    if (actionSpace.id === 'act_excavate') {
+      const { updatedBoard, count } = excavateCavern(updatedPlayer.caveBoard);
+      updatedPlayer.caveBoard = updatedBoard;
+      updatedPlayer.resources.stone += count;
+      soundManager.playPickaxeMine();
+      actionLog += ` (동굴 ${count}칸 발굴 및 석재 +${count})`;
+    } else if (actionSpace.id === 'act_slash_burn') {
+      const { updatedBoard } = slashAndBurn(updatedPlayer.fieldBoard);
+      updatedPlayer.fieldBoard = updatedBoard;
+      soundManager.playAxeChop();
+      actionLog += ` (숲 1칸 벌목 화전 개간)`;
+    } else if (actionSpace.id === 'act_sow') {
+      const cropToSow = actionDetail?.crop || (updatedPlayer.resources.grain > 0 ? 'grain' : 'pumpkin');
+      if (updatedPlayer.resources[cropToSow as 'grain' | 'pumpkin'] > 0) {
+        const { updatedBoard, success } = sowCropOnField(updatedPlayer.fieldBoard, cropToSow);
         if (success) {
           updatedPlayer.fieldBoard = updatedBoard;
-          updatedPlayer.resources.wood += 1;
-          soundManager.playWoodToken();
-          actionLog = '숲 1칸을 밭으로 개간하고 나무 1개를 얻었습니다.';
-        } else {
-          showFeedback('개간할 수 있는 숲이 없습니다.');
-          return false;
+          updatedPlayer.resources[cropToSow as 'grain' | 'pumpkin'] -= 1;
+          actionLog += ` (밭에 ${cropToSow === 'grain' ? '곡물' : '호박'} 파종 완료)`;
         }
-        break;
       }
-
-      case 'sow_crops': {
-        const cropKey: 'grain' | 'pumpkin' = actionDetail?.crop || (updatedPlayer.resources.grain > 0 ? 'grain' : 'pumpkin');
-        if (updatedPlayer.resources[cropKey] <= 0) {
-          showFeedback('파종할 종자가 없습니다.');
-          return false;
-        }
-        const { updatedBoard, success } = sowCropOnField(updatedPlayer.fieldBoard, cropKey);
-        if (success) {
-          updatedPlayer.fieldBoard = updatedBoard;
-          updatedPlayer.resources[cropKey] -= 1;
-          soundManager.playParchment();
-          actionLog = `밭에 ${cropKey === 'grain' ? '곡물' : '호박'} 종자를 파종했습니다.`;
-        } else {
-          showFeedback('파종할 빈 밭이 없습니다.');
-          return false;
-        }
-        break;
-      }
-
-      case 'excavation': {
-        const { updatedBoard, count } = excavateCavern(updatedPlayer.caveBoard);
-        if (count > 0) {
-          updatedPlayer.caveBoard = updatedBoard;
-          updatedPlayer.resources.stone += 1;
-          soundManager.playAnvilStrike();
-          actionLog = `단단한 암석 ${count}칸을 발굴하여 빈 동굴을 확보했습니다. (돌 +1)`;
-        } else {
-          showFeedback('더 이상 발굴할 암석이 없습니다.');
-          return false;
-        }
-        break;
-      }
-
-      case 'furnish_cavern': {
+    } else if (actionSpace.id === 'act_fences') {
+      const { updatedBoard } = buildPasture(updatedPlayer.fieldBoard);
+      updatedPlayer.fieldBoard = updatedBoard;
+      actionLog += ` (울타리 목초지 조성)`;
+    } else if (actionSpace.id === 'act_furnish') {
+      soundManager.playBuild();
+      if (actionDetail?.furnishingId) {
+        get().buildFurnishingAction(actionDetail.furnishingId);
+      } else {
         set({ selectedFurnishingForBuild: INITIAL_FURNISHINGS[0] });
-        actionLog = '방 인테리어 타일 선택으로 진입';
-        break;
       }
-
-      case 'blacksmith': {
-        const oreToForge = Math.min(8, Math.max(1, actionDetail?.oreAmount || Math.min(4, updatedPlayer.resources.ore)));
-        if (updatedPlayer.resources.ore >= oreToForge && oreToForge > 0) {
-          updatedPlayer.resources.ore -= oreToForge;
-          // 드워프 무기 레벨 단조
-          updatedPlayer.dwarfs = updatedPlayer.dwarfs.map(d => {
-            if (d.id === availableDwarf.id) {
-              return { ...d, weaponLevel: Math.min(14, d.weaponLevel + oreToForge) };
-            }
-            return d;
-          });
-          soundManager.playAnvilStrike();
-          actionLog = `광석 ${oreToForge}개로 무기(레벨 +${oreToForge})를 단조했습니다!`;
-        } else {
-          showFeedback('무기를 단조할 광석이 부족합니다.');
-          return false;
-        }
-        break;
+      actionLog += ` (가구 배치 및 방 타일 건축 마켓 방문)`;
+    } else if (actionSpace.id === 'act_blacksmith') {
+      const oreSpent = Math.min(updatedPlayer.resources.ore, 6);
+      if (oreSpent > 0) {
+        updatedPlayer.resources.ore -= oreSpent;
+        updatedPlayer.dwarfs = updatedPlayer.dwarfs.map(d => 
+          d.id === availableDwarf.id ? { ...d, weaponLevel: Math.min(14, d.weaponLevel + oreSpent) } : d
+        );
+        soundManager.playAnvilStrike();
+        actionLog += ` (무기 레벨 +${oreSpent} 단조! 현재 Lv ${availableDwarf.weaponLevel + oreSpent})`;
       }
-
-      case 'expedition': {
-        soundManager.playFanfare();
-        actionLog = '영웅 원정에 출정하여 전리품을 획득했습니다.';
-        break;
-      }
-
-      case 'fencing': {
-        const { updatedBoard, count } = buildPasture(updatedPlayer.fieldBoard);
-        if (count > 0 && updatedPlayer.resources.wood >= 2) {
-          updatedPlayer.fieldBoard = updatedBoard;
-          updatedPlayer.resources.wood -= 2;
-          soundManager.playWoodToken();
-          actionLog = `초원 ${count}칸에 울타리를 쳐 목초지로 전환했습니다.`;
-        } else {
-          showFeedback('목재(2개 필요) 또는 개간된 초원이 부족합니다.');
-          return false;
-        }
-        break;
-      }
-
-      case 'cattle_farming': {
-        updatedPlayer.livestock.cattle += 1;
-        updatedPlayer.livestock.boar += 1;
-        soundManager.playCargoLoad();
-        actionLog = '가축 시장에서 소 1마리와 멧돼지 1마리를 분양받았습니다.';
-        break;
+    } else if (actionSpace.id === 'act_expedition_1' || actionSpace.id === 'act_expedition_2') {
+      soundManager.playExpeditionHorn();
+      const currentWeapon = availableDwarf.weaponLevel;
+      if (currentWeapon > 0) {
+        updatedPlayer.dwarfs = updatedPlayer.dwarfs.map(d => 
+          d.id === availableDwarf.id ? { ...d, weaponLevel: Math.min(14, d.weaponLevel + 1) } : d
+        );
+        actionLog += ` (원정 출정! 무기숙련도 +1 상승)`;
+        set({
+          isExpeditionModalOpen: true,
+          activeDwarfForExpedition: availableDwarf.id
+        });
       }
     }
 
-    // 해당 행동 칸 점유 처리 및 누적 자원 리셋
-    updatedActionSpaces = updatedActionSpaces.map(a => {
-      if (a.id === actionSpaceId) {
-        return { ...a, occupiedByPlayerId: currPlayer.id, accumulatedCount: 0 };
-      }
-      return a;
-    });
+    updatedActionSpaces = updatedActionSpaces.map(a => 
+      a.id === actionSpaceId ? { ...a, occupiedByPlayerId: currPlayer.id } : a
+    );
 
     const updatedPlayers = [...players];
     updatedPlayers[currentTurnPlayerIndex] = updatedPlayer;
 
-    showFeedback(actionLog);
+    const newLogs = [`${currPlayer.name}: ${actionLog || actionSpace.name} 수행`, ...logs];
 
     set({
       players: updatedPlayers,
       actionSpaces: updatedActionSpaces,
-      logs: [`${currPlayer.name}: ${actionLog}`, ...logs]
+      logs: newLogs
     });
 
+    get().syncToPeers();
     get().advanceTurn();
     return true;
   },
 
   buildFurnishingAction: (furnishingId: string) => {
-    const { players, currentTurnPlayerIndex, availableFurnishings, logs } = get();
+    const { 
+      playMode,
+      isHost,
+      myPlayerId,
+      players, 
+      currentTurnPlayerIndex, 
+      availableFurnishings, 
+      logs 
+    } = get();
+
+    if (playMode === 'online' && !isHost) {
+      peerManager.sendAction('CAVERNA_BUILD_FURNISHING', { furnishingId }, myPlayerId);
+      set({ selectedFurnishingForBuild: null });
+      return true;
+    }
+
     const curr = players[currentTurnPlayerIndex];
     const furnishing = availableFurnishings.find(f => f.id === furnishingId);
     if (!furnishing) return false;
 
-    // 자원 체크
+    // 비용 검증
     for (const [res, cost] of Object.entries(furnishing.cost)) {
       if ((curr.resources[res as CavernaResource] || 0) < (cost || 0)) {
-        showFeedback(`건설 자원(${res})이 부족합니다.`);
+        showFeedback(`자원이 부족합니다: ${res} 필요`);
         return false;
       }
     }
 
-    // 빈 동굴 공간 찾기
-    const { updatedBoard, success } = placeFurnishing(
-      curr.caveBoard, 
-      furnishing.id, 
-      furnishing.category === 'dwelling'
-    );
-
+    const { updatedBoard, success } = placeFurnishing(curr.caveBoard, furnishingId, furnishing.category === 'dwelling');
     if (!success) {
-      showFeedback('타일을 배치할 빈 동굴 공간이 없습니다. 먼저 동굴을 발굴하세요.');
+      showFeedback('배치 가능한 빈 동굴(Cavern) 슬롯이 없습니다. 먼저 동굴을 발굴하세요.');
       return false;
     }
 
-    // 자원 차감
+    soundManager.playBuild();
+
     const updatedResources = { ...curr.resources };
     for (const [res, cost] of Object.entries(furnishing.cost)) {
       updatedResources[res as CavernaResource] -= (cost || 0);
     }
 
-    // 즉각 보너스 지급
-    if (furnishing.immediateBonus) {
-      for (const [res, bonus] of Object.entries(furnishing.immediateBonus)) {
-        updatedResources[res as CavernaResource] += (bonus || 0);
-      }
-    }
-
-    // 주거 수용량 증가 시 신규 드워프 추가
-    let updatedDwarfs = [...curr.dwarfs];
-    if (furnishing.dwellingCapacity && updatedDwarfs.length < 5) {
-      updatedDwarfs.push({
-        id: `d-${curr.id}-${updatedDwarfs.length}`,
-        name: `드워프 ${updatedDwarfs.length + 1}째`,
-        weaponLevel: 0,
-        hasActedThisRound: false,
-        placedActionId: null
-      });
-    }
-
-    soundManager.playBuild();
-
-    const updatedPlayers = [...players];
-    updatedPlayers[currentTurnPlayerIndex] = {
+    const updatedPlayer: PlayerCaverna = {
       ...curr,
       resources: updatedResources,
-      dwarfs: updatedDwarfs,
       caveBoard: updatedBoard,
-      builtFurnishings: [...curr.builtFurnishings, furnishing.id]
+      builtFurnishings: [...curr.builtFurnishings, furnishingId]
     };
+
+    const updatedPlayers = [...players];
+    updatedPlayers[currentTurnPlayerIndex] = updatedPlayer;
+
+    const remainingFurnishings = availableFurnishings.filter(f => f.id !== furnishingId);
 
     set({
       players: updatedPlayers,
+      availableFurnishings: remainingFurnishings,
       selectedFurnishingForBuild: null,
-      logs: [`${curr.name}: [${furnishing.name}] 완공! (VP +${furnishing.vp})`, ...logs]
+      logs: [`${curr.name}: [${furnishing.name}] 방 건축 완료! (+${furnishing.vp}점)`, ...logs]
     });
 
-    showFeedback(`[${furnishing.name}] 완공!`);
+    showFeedback(`[${furnishing.name}] 방을 건축했습니다!`);
+    get().syncToPeers();
     return true;
   },
 
   claimExpeditionLoot: (lootId: string) => {
-    const { players, currentTurnPlayerIndex, logs } = get();
+    const { 
+      playMode,
+      isHost,
+      myPlayerId,
+      players, 
+      currentTurnPlayerIndex, 
+      logs 
+    } = get();
+
+    if (playMode === 'online' && !isHost) {
+      peerManager.sendAction('CAVERNA_CLAIM_LOOT', { lootId }, myPlayerId);
+      set({
+        isExpeditionModalOpen: false,
+        activeDwarfForExpedition: null
+      });
+      return;
+    }
+
     const curr = players[currentTurnPlayerIndex];
     const loot = EXPEDITION_LOOT_TABLE.find(l => l.id === lootId);
     if (!loot) return;
 
-    let updatedPlayer = {
+    const updatedPlayer: PlayerCaverna = {
       ...curr,
       resources: { ...curr.resources },
       livestock: { ...curr.livestock },
@@ -397,9 +511,11 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
     if (loot.specialAction === 'free_cavern') {
       const { updatedBoard } = excavateCavern(updatedPlayer.caveBoard);
       updatedPlayer.caveBoard = updatedBoard;
+      soundManager.playPickaxeMine();
     } else if (loot.specialAction === 'free_field') {
       const { updatedBoard } = slashAndBurn(updatedPlayer.fieldBoard);
       updatedPlayer.fieldBoard = updatedBoard;
+      soundManager.playAxeChop();
     } else if (loot.specialAction === 'free_stable') {
       const { updatedBoard } = buildPasture(updatedPlayer.fieldBoard);
       updatedPlayer.fieldBoard = updatedBoard;
@@ -416,21 +532,19 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
       activeDwarfForExpedition: null,
       logs: [`${curr.name}: 원정 전리품 [${loot.name}] 획득!`, ...logs]
     });
+
+    get().syncToPeers();
   },
 
   advanceTurn: () => {
     const { players, currentTurnPlayerIndex, actionSpaces, round, logs } = get();
 
-    // 모든 플레이어의 모든 드워프가 행동을 완료했는지 확인
     const allDwarfsDone = players.every(p => p.dwarfs.every(d => d.hasActedThisRound));
 
     if (allDwarfsDone) {
-      // 1라운드 종료 ➔ 수확 및 밥 먹이기 단계
       const { updatedPlayers: fedPlayers, logs: harvestLogs } = processHarvestPhase(players);
-
       soundManager.playShipCargo();
 
-      // 누적 행동 칸 자원 보충
       const refreshedActions = actionSpaces.map(a => {
         let count = a.accumulatedCount;
         if (a.accumulatesResource) {
@@ -451,8 +565,8 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
           actionSpaces: refreshedActions,
           logs: [`🔔 [제 ${round + 1} 라운드] 시작! 새로운 동굴 개척의 날이 밝았습니다.`, ...harvestLogs, ...logs]
         });
+        get().syncToPeers();
       } else {
-        // 8라운드 게임 완전 종료!
         soundManager.playGrandFanfare();
         set({
           isGameOver: true,
@@ -460,10 +574,10 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
           players: fedPlayers,
           logs: ['🏁 [카베르나] 8개 라운드가 모두 완료되었습니다! 최종 일족 번영도 점수를 집계합니다.', ...harvestLogs, ...logs]
         });
+        get().syncToPeers();
         return;
       }
     } else {
-      // 다음 플레이어로 턴 전환 (드워프 미행동 플레이어 탐색)
       let nextIdx = (currentTurnPlayerIndex + 1) % players.length;
       let loopCount = 0;
       while (players[nextIdx].dwarfs.every(d => d.hasActedThisRound) && loopCount < players.length) {
@@ -472,9 +586,9 @@ export const useCavernaStore = create<CavernaStore>((set, get) => ({
       }
 
       set({ currentTurnPlayerIndex: nextIdx });
+      get().syncToPeers();
     }
 
-    // AI 플레이어 턴인 경우 자동 실행
     setTimeout(() => {
       const state = get();
       const nextP = state.players[state.currentTurnPlayerIndex];

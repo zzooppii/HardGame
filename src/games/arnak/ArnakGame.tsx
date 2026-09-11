@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useCavernaStore } from './store/useCavernaStore';
-import { CaveBoard } from './components/CaveBoard';
-import { FieldBoard } from './components/FieldBoard';
-import { ActionBoard } from './components/ActionBoard';
-import { FurnishingMarketModal } from './components/FurnishingMarketModal';
-import { CavernaGameOverModal } from './components/CavernaGameOverModal';
-import { CavernaRuleGuideModal } from './components/CavernaRuleGuideModal';
+import { useArnakStore } from './store/useArnakStore';
+import { ResearchTrackBoard } from './components/ResearchTrackBoard';
+import { DigSiteBoard } from './components/DigSiteBoard';
+import { MarketAndHandBoard } from './components/MarketAndHandBoard';
+import { ArnakGameOverModal } from './components/ArnakGameOverModal';
+import { ArnakRuleGuideModal } from './components/ArnakRuleGuideModal';
 import { Volume2, VolumeX, LogOut, BookOpen, Globe, Copy, Check } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import { subscribeFeedback, showFeedback } from '../../utils/feedback';
 
-interface CavernaGameProps {
+interface ArnakGameProps {
   onBackToLobby: () => void;
 }
 
@@ -21,7 +20,7 @@ interface FeedbackItem {
   y: number;
 }
 
-export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
+export const ArnakGame: React.FC<ArnakGameProps> = ({ onBackToLobby }) => {
   const {
     round,
     players,
@@ -31,7 +30,7 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
     playMode,
     roomCode,
     myPlayerId
-  } = useCavernaStore();
+  } = useArnakStore();
 
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
@@ -54,7 +53,7 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'G' && e.shiftKey) {
-        useCavernaStore.setState({ isGameOver: true });
+        useArnakStore.setState({ isGameOver: true });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -104,7 +103,7 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
       width: '100%',
       margin: '0 auto',
       boxSizing: 'border-box',
-      background: '#090d16'
+      background: '#040d0a'
     }}>
       {/* 1. 상단 글로벌 헤더 */}
       <header style={{
@@ -112,17 +111,17 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingBottom: '8px',
-        borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
+        borderBottom: '1px solid rgba(16, 185, 129, 0.3)',
         marginBottom: '8px',
         flexShrink: 0
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div>
-            <div style={{ fontSize: '0.62rem', letterSpacing: '1.5px', color: '#f59e0b', fontWeight: 700 }}>
-              EURO MASTERPIECES 04
+            <div style={{ fontSize: '0.62rem', letterSpacing: '1.5px', color: '#10b981', fontWeight: 700 }}>
+              EURO MASTERPIECES 05
             </div>
             <h1 className="font-serif" style={{ fontSize: '1.15rem', fontWeight: 800, color: '#f8fafc', margin: 0, lineHeight: 1.1 }}>
-              CAVERNA (카베르나: 동굴 농부들)
+              LOST RUINS OF ARNAK (아르낙의 잊혀진 유적)
             </h1>
           </div>
 
@@ -130,14 +129,14 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
             display: 'flex',
             alignItems: 'baseline',
             gap: '6px',
-            background: 'rgba(20, 13, 8, 0.7)',
+            background: 'rgba(6, 78, 59, 0.4)',
             padding: '4px 12px',
             borderRadius: '6px',
-            border: '1px solid rgba(245, 158, 11, 0.3)'
+            border: '1px solid rgba(16, 185, 129, 0.4)'
           }}>
-            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>라운드</span>
-            <span className="font-serif" style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f59e0b' }}>{round}</span>
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>/ 8</span>
+            <span style={{ fontSize: '0.72rem', color: '#a7f3d0' }}>라운드</span>
+            <span className="font-serif" style={{ fontSize: '1.15rem', fontWeight: 900, color: '#34d399' }}>{round}</span>
+            <span style={{ fontSize: '0.7rem', color: '#a7f3d0' }}>/ 5</span>
           </div>
         </div>
 
@@ -148,20 +147,21 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
             alignItems: 'center',
             gap: '10px',
             background: 'rgba(15, 23, 42, 0.85)',
-            border: '1px solid rgba(245, 158, 11, 0.25)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
             padding: '4px 14px',
             borderRadius: '20px',
             fontSize: '0.75rem'
           }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: opponentPlayer.color }} />
             <span style={{ fontWeight: 700, color: '#f8fafc' }}>{opponentPlayer.name}</span>
-            <span style={{ color: opponentPlayer.id === currPlayer?.id ? '#f87171' : '#94a3b8' }}>
-              {opponentPlayer.id === currPlayer?.id ? '● 행동 중...' : '대기 중'}
+            <span style={{ color: opponentPlayer.id === currPlayer?.id ? '#34d399' : '#94a3b8' }}>
+              {opponentPlayer.id === currPlayer?.id ? '● 탐험 중...' : '대기 중'}
             </span>
             <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-            <span style={{ color: '#facc15' }}>식량 {opponentPlayer.resources.food}</span>
-            <span style={{ color: '#f43f5e' }}>💎 루비 {opponentPlayer.resources.ruby}</span>
-            <span style={{ color: '#4ade80' }}>드워프 {opponentPlayer.dwarfs.length}명</span>
+            <span style={{ color: '#fbbf24' }}>🪙 {opponentPlayer.resources.coins}</span>
+            <span style={{ color: '#38bdf8' }}>🧭 {opponentPlayer.resources.compasses}</span>
+            <span style={{ color: '#f43f5e' }}>💎 {opponentPlayer.resources.rubies}</span>
+            <span style={{ color: '#34d399' }}>🔍 Lv {opponentPlayer.glassStep}</span>
           </div>
         )}
 
@@ -174,13 +174,13 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
               alignItems: 'center',
               gap: '6px',
               background: 'rgba(15, 23, 42, 0.8)',
-              border: '1px solid #0284c7',
+              border: '1px solid #10b981',
               borderRadius: '8px',
               padding: '2px 8px'
             }}>
-              <Globe size={13} style={{ color: '#38bdf8' }} />
+              <Globe size={13} style={{ color: '#34d399' }} />
               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>방:</span>
-              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '1px' }}>{roomCode}</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#34d399', letterSpacing: '1px' }}>{roomCode}</span>
               <button
                 onClick={handleCopyInviteLink}
                 style={{
@@ -212,9 +212,9 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
             style={{
               padding: '4px 10px',
               borderRadius: '6px',
-              background: 'rgba(245, 158, 11, 0.15)',
-              border: '1px solid rgba(245, 158, 11, 0.4)',
-              color: '#f59e0b',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              color: '#34d399',
               fontSize: '0.75rem',
               fontWeight: 700,
               cursor: 'pointer',
@@ -258,9 +258,9 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
       {/* 상대방 턴 안내 배너 */}
       {!isMyTurn && (
         <div style={{
-          background: 'rgba(245, 158, 11, 0.15)',
-          border: '1px solid rgba(245, 158, 11, 0.4)',
-          color: '#fde047',
+          background: 'rgba(16, 185, 129, 0.15)',
+          border: '1px solid rgba(16, 185, 129, 0.4)',
+          color: '#6ee7b7',
           padding: '4px 14px',
           borderRadius: '8px',
           fontSize: '0.78rem',
@@ -271,126 +271,68 @@ export const CavernaGame: React.FC<CavernaGameProps> = ({ onBackToLobby }) => {
           marginBottom: '6px',
           flexShrink: 0
         }}>
-          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', animation: 'pulse 1.5s infinite' }} />
-          <span>상대 드워프 일족(<strong>{currPlayer?.name}</strong>)이 행동을 수행하고 있습니다...</span>
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', animation: 'pulse 1.5s infinite' }} />
+          <span>상대 탐험가(<strong>{currPlayer?.name}</strong>)가 행동을 수행하고 있습니다...</span>
         </div>
       )}
 
-      {/* 2. 100vh 3분할 메인 대시보드 (동굴 30% : 행동판 38% : 농경 32%) */}
+      {/* 2. 100vh 3분할 메인 대시보드 (연구트랙 28% : 발굴지 42% : 장비/핸드 30%) */}
       <main style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr)',
-        gap: '12px',
+        gridTemplateColumns: '28% 42% 30%',
+        gap: '10px',
         flex: 1,
         minHeight: 0,
-        overflow: 'hidden',
-        pointerEvents: isMyTurn ? 'auto' : 'none',
-        opacity: isMyTurn ? 1 : 0.94
+        marginBottom: '6px'
       }}>
-        {/* [좌측] 동굴 구역 */}
-        <div style={{ height: '100%', minHeight: 0 }}>
-          <CaveBoard />
-        </div>
+        {/* 좌측: 사원 연구 트랙 */}
+        <section style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
+          <ResearchTrackBoard />
+        </section>
 
-        {/* [중앙] 일꾼 놓기 행동 판 */}
-        <div style={{ height: '100%', minHeight: 0 }}>
-          <ActionBoard />
-        </div>
+        {/* 중앙: 발굴지 & 수호자 */}
+        <section style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
+          <DigSiteBoard />
+        </section>
 
-        {/* [우측] 숲/농경 보드 + 하단 인벤토리 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%', minHeight: 0 }}>
-          <div style={{ flex: 1, minHeight: 0 }}>
-            <FieldBoard />
-          </div>
-
-          {/* 내 자원 인벤토리 & 드워프 현황 */}
-          {myPlayer && (
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.95)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '10px',
-              padding: '8px 12px',
-              flexShrink: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
-            }}>
-              {/* 자원 바 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem' }}>
-                <span style={{ color: '#cbd5e1' }}>🪵 {myPlayer.resources.wood}</span>
-                <span style={{ color: '#cbd5e1' }}>🪨 {myPlayer.resources.stone}</span>
-                <span style={{ color: '#38bdf8' }}>⛓️ {myPlayer.resources.ore}</span>
-                <span style={{ color: '#f43f5e', fontWeight: 800 }}>💎 {myPlayer.resources.ruby}</span>
-                <span style={{ color: '#fde047' }}>🌾 {myPlayer.resources.grain}</span>
-                <span style={{ color: '#fb923c' }}>🎃 {myPlayer.resources.pumpkin}</span>
-                <span style={{ color: '#4ade80', fontWeight: 800 }}>🍞 {myPlayer.resources.food}</span>
-              </div>
-
-              {/* 드워프 일꾼 상태 */}
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
-                {myPlayer.dwarfs.map((dwarf) => (
-                  <div
-                    key={dwarf.id}
-                    style={{
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      background: dwarf.hasActedThisRound ? 'rgba(0,0,0,0.3)' : 'rgba(56, 189, 248, 0.15)',
-                      border: dwarf.hasActedThisRound ? '1px solid rgba(255,255,255,0.06)' : '1px solid #38bdf8',
-                      fontSize: '0.65rem',
-                      color: dwarf.hasActedThisRound ? '#64748b' : '#38bdf8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <span>🧔</span>
-                    <span>{dwarf.name}</span>
-                    {dwarf.weaponLevel > 0 && (
-                      <span style={{ color: '#facc15', fontWeight: 800 }}>
-                        (⚔️ Lv.{dwarf.weaponLevel})
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 연대기 로그 */}
-          <div style={{
-            height: '80px',
-            background: 'rgba(10, 16, 26, 0.95)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '8px',
-            padding: '6px 10px',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-            fontSize: '0.68rem',
-            color: '#94a3b8',
-            flexShrink: 0
-          }}>
-            {logs.slice(0, 8).map((log, idx) => (
-              <div key={idx} style={{ lineHeight: 1.3 }}>
-                • {log}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* 우측: 장비 마켓, 핸드 카드, 자원 */}
+        <section style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
+          <MarketAndHandBoard />
+        </section>
       </main>
 
+      {/* 하단 연대기 로그 */}
+      <div style={{
+        height: '65px',
+        background: 'rgba(10, 16, 26, 0.95)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '8px',
+        padding: '6px 12px',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        fontSize: '0.68rem',
+        color: '#94a3b8',
+        flexShrink: 0
+      }}>
+        {logs.slice(0, 6).map((log, idx) => (
+          <div key={idx} style={{ lineHeight: 1.3 }}>
+            • {log}
+          </div>
+        ))}
+      </div>
+
       {/* 모달 */}
-      <FurnishingMarketModal />
-      <CavernaGameOverModal onReturnToLobby={onBackToLobby} />
-      <CavernaRuleGuideModal isOpen={isRuleModalOpen} onClose={() => setIsRuleModalOpen(false)} />
+      <ArnakRuleGuideModal isOpen={isRuleModalOpen} onClose={() => setIsRuleModalOpen(false)} />
+      <ArnakGameOverModal onReturnToLobby={onBackToLobby} />
 
       {/* 플로팅 피드백 */}
       {feedbacks.map((f) => (
         <div
           key={f.id}
           className="floating-feedback-item font-serif"
-          style={{ left: f.x, top: f.y, color: '#f59e0b' }}
+          style={{ left: f.x, top: f.y, color: '#34d399' }}
         >
           {f.text}
         </div>

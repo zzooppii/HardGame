@@ -10,11 +10,15 @@ export const ActionBoard: React.FC = () => {
     round, 
     performAction, 
     players, 
-    currentTurnPlayerIndex 
+    currentTurnPlayerIndex,
+    playMode,
+    myPlayerId
   } = useCavernaStore();
 
   const currPlayer = players[currentTurnPlayerIndex];
-  const isMyTurn = currPlayer && !currPlayer.isAI;
+  const isMyTurn = playMode === 'online'
+    ? currPlayer?.id === myPlayerId
+    : (currPlayer && !currPlayer.isAI);
 
   const getActionIcon = (actionType: ActionSpace['actionType']) => {
     switch (actionType) {

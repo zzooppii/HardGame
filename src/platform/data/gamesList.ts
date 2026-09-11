@@ -77,9 +77,9 @@ export const BOARD_GAMES_LIST: BoardGameMeta[] = [
     category: ['덱 빌딩', '일꾼 놓기', '미지의 섬 탐험', '수호자 격퇴'],
     flavorText: '지도에 없는 미지의 섬 아르낙에서 고대 문명의 신비를 탐사하세요.',
     description: '탐험 장비를 갖추고 신비한 유적지를 발굴하며 전설 속 수호자를 잠재우고 조사 트랙을 전진하여 고대 사원의 비밀을 밝혀냅니다.',
-    status: 'in_development',
-    accentColor: '#a855f7',
-    bannerImage: 'linear-gradient(135deg, #3b0764 0%, #1a0030 60%, #c084fc 100%)'
+    status: 'available',
+    accentColor: '#10b981',
+    bannerImage: 'linear-gradient(135deg, #064e3b 0%, #022c22 60%, #10b981 100%)'
   },
   {
     id: 'terraforming-mars',

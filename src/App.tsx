@@ -4,6 +4,7 @@ import { PuertoRicoGame } from './games/puerto-rico/PuertoRicoGame';
 import { BurgundyGame } from './games/burgundy/BurgundyGame';
 import { LeHavreGame } from './games/le-havre/LeHavreGame';
 import { CavernaGame } from './games/caverna/CavernaGame';
+import { ArnakGame } from './games/arnak/ArnakGame';
 import { Dices } from 'lucide-react';
 
 export function App() {
@@ -21,6 +22,9 @@ export function App() {
   }
   if (activeGameId === 'caverna') {
     return <CavernaGame onBackToLobby={() => setActiveGameId(null)} />;
+  }
+  if (activeGameId === 'arnak') {
+    return <ArnakGame onBackToLobby={() => setActiveGameId(null)} />;
   }
 
   return (
@@ -66,7 +70,7 @@ export function App() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            <span className="badge badge-gold">4대 명작 컬렉션 (푸에르토리코 • 버건디 • 르아브르 • 카베르나) 플레이 가능</span>
+            <span className="badge badge-gold">5대 명작 컬렉션 (푸에르토리코 • 버건디 • 르아브르 • 카베르나 • 아르낙) 플레이 가능</span>
           </div>
         </div>
       </header>

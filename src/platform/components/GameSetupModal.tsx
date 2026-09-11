@@ -4,7 +4,8 @@ import type { LobbyPlayer } from '../network/peerManager';
 import { usePuertoRicoStore, getSerializableGameState } from '../../games/puerto-rico/store/usePuertoRicoStore';
 import { useBurgundyStore, getSerializableBurgundyState } from '../../games/burgundy/store/useBurgundyStore';
 import { useLeHavreStore, getSerializableLeHavreState } from '../../games/le-havre/store/useLeHavreStore';
-import { useCavernaStore } from '../../games/caverna/store/useCavernaStore';
+import { useCavernaStore, getSerializableCavernaState } from '../../games/caverna/store/useCavernaStore';
+import { useArnakStore, getSerializableArnakState } from '../../games/arnak/store/useArnakStore';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
 
 interface GameSetupModalProps {
@@ -62,6 +63,30 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onGameStart = (initialState, myAssignedPlayerId) => {
+      if (gameTitle.includes('아르낙')) {
+        useArnakStore.getState().syncRemoteState(initialState);
+        useArnakStore.setState({
+          playMode: 'online',
+          myPlayerId: myAssignedPlayerId,
+          isHost: false,
+          roomCode: createdRoomCode || inputRoomCode
+        });
+        onStartGame();
+        return;
+      }
+
+      if (gameTitle === '카베르나') {
+        useCavernaStore.getState().syncRemoteState(initialState);
+        useCavernaStore.setState({
+          playMode: 'online',
+          myPlayerId: myAssignedPlayerId,
+          isHost: false,
+          roomCode: createdRoomCode || inputRoomCode
+        });
+        onStartGame();
+        return;
+      }
+
       if (gameTitle === '르아브르') {
         useLeHavreStore.getState().syncRemoteState(initialState);
         useLeHavreStore.setState({
@@ -115,6 +140,38 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
             payload: { players: updatedLobby, roomCode: createdRoomCode },
             senderId: peerManager.myPeerId || 'host'
           });
+        }
+        return;
+      }
+
+      // 아르낙 게스트 액션 수신 처리
+      if (gameTitle.includes('아르낙')) {
+        const store = useArnakStore.getState();
+        if (actionName === 'ARNAK_PLACE_WORKER') {
+          store.placeWorkerAction(payload.siteId);
+        } else if (actionName === 'ARNAK_DEFEAT_GUARDIAN') {
+          store.defeatGuardianAction(payload.siteId);
+        } else if (actionName === 'ARNAK_ADVANCE_RESEARCH') {
+          store.advanceResearchAction(payload.tokenType);
+        } else if (actionName === 'ARNAK_PLAY_CARD') {
+          store.playCardAction(payload.cardId);
+        } else if (actionName === 'ARNAK_BUY_CARD') {
+          store.buyCardAction(payload.cardId, payload.cardType);
+        } else if (actionName === 'ARNAK_PASS') {
+          store.passTurnAction();
+        }
+        return;
+      }
+
+      // 카베르나 게스트 액션 수신 처리
+      if (gameTitle === '카베르나') {
+        const store = useCavernaStore.getState();
+        if (actionName === 'CAVERNA_PERFORM_ACTION') {
+          store.performAction(payload.actionSpaceId, payload.actionDetail);
+        } else if (actionName === 'CAVERNA_BUILD_FURNISHING') {
+          store.buildFurnishingAction(payload.furnishingId);
+        } else if (actionName === 'CAVERNA_CLAIM_LOOT') {
+          store.claimExpeditionLoot(payload.lootId);
         }
         return;
       }
@@ -184,6 +241,14 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onStateSync = (syncedState) => {
+      if (gameTitle.includes('아르낙')) {
+        useArnakStore.getState().syncRemoteState(syncedState);
+        return;
+      }
+      if (gameTitle === '카베르나') {
+        useCavernaStore.getState().syncRemoteState(syncedState);
+        return;
+      }
       if (gameTitle === '르아브르') {
         useLeHavreStore.getState().syncRemoteState(syncedState);
         return;
@@ -205,7 +270,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     setIsConnecting(true);
     setOnlineError(null);
 
-    const gamePrefix = gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr');
+    const gamePrefix = gameTitle.includes('아르낙') ? 'arnak' : (gameTitle === '카베르나' ? 'caverna' : (gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr')));
 
     peerManager.createRoom(
       playerName,
@@ -239,7 +304,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     setIsConnecting(true);
     setOnlineError(null);
 
-    const gamePrefix = gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr');
+    const gamePrefix = gameTitle.includes('아르낙') ? 'arnak' : (gameTitle === '카베르나' ? 'caverna' : (gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr')));
 
     peerManager.joinRoom(
       inputRoomCode,
@@ -269,6 +334,46 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
         name: p.name,
         peerId: p.peerId
       }));
+
+      if (gameTitle.includes('아르낙')) {
+        useArnakStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
+        const pureInitialState = getSerializableArnakState(useArnakStore.getState());
+
+        peerManager.broadcast({
+          type: 'START_GAME',
+          payload: {
+            initialState: pureInitialState,
+            playerMappings: lobbyPlayers.map(p => ({
+              peerId: p.peerId,
+              assignedPlayerId: p.assignedPlayerId
+            }))
+          },
+          senderId: peerManager.myPeerId || 'host'
+        });
+
+        onStartGame();
+        return;
+      }
+
+      if (gameTitle === '카베르나') {
+        useCavernaStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
+        const pureInitialState = getSerializableCavernaState(useCavernaStore.getState());
+
+        peerManager.broadcast({
+          type: 'START_GAME',
+          payload: {
+            initialState: pureInitialState,
+            playerMappings: lobbyPlayers.map(p => ({
+              peerId: p.peerId,
+              assignedPlayerId: p.assignedPlayerId
+            }))
+          },
+          senderId: peerManager.myPeerId || 'host'
+        });
+
+        onStartGame();
+        return;
+      }
 
       if (gameTitle === '르아브르') {
         useLeHavreStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
@@ -364,7 +469,9 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
 
   // 솔로 / 로컬 시작
   const handleStartSoloOrLocal = () => {
-    if (gameTitle.includes('카베르나')) {
+    if (gameTitle.includes('아르낙')) {
+      useArnakStore.getState().initGame(playerCount, activeTab === 'solo');
+    } else if (gameTitle.includes('카베르나')) {
       useCavernaStore.getState().initGame(playerCount, activeTab === 'solo');
     } else if (gameTitle === '르아브르') {
       useLeHavreStore.getState().initGame(playerCount, activeTab === 'solo');

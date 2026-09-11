@@ -413,6 +413,141 @@ class SoundManager {
     osc.start(now);
     osc.stop(now + 0.22);
   }
+
+  /** 14. 드워프 곡괭이 암석 채굴음 (Pickaxe Rock/Ore Strike) */
+  public playPickaxeMine() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    // 고주파 금속 챙 + 저주파 암석 파쇄음 합성
+    [1600, 2400, 180].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = idx === 2 ? 'sawtooth' : 'triangle';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.4, now + 0.15);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(idx === 2 ? 0.25 : 0.15, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + (idx === 2 ? 0.18 : 0.12));
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.2);
+    });
+  }
+
+  /** 15. 도끼 벌목 둔탁한 나무 베기음 (Wood Axe Chop) */
+  public playAxeChop() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.28, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.16);
+  }
+
+  /** 16. 드워프 원정 영웅적인 호른/나팔 팡파레 (Expedition Horn) */
+  public playExpeditionHorn() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const notes = [330, 440, 554.37, 659.25]; // E4, A4, C#5, E5
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      const startTime = now + idx * 0.08;
+      const dur = idx === notes.length - 1 ? 0.4 : 0.12;
+
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.12, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + dur + 0.05);
+    });
+  }
+
+  /** 17. 고대 유물 발견/제압 신비로운 울림 (Arnak Artifact Mystery) */
+  public playArnakArtifact() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      const st = now + i * 0.07;
+      osc.frequency.setValueAtTime(freq, st);
+
+      gain.gain.setValueAtTime(0, st);
+      gain.gain.linearRampToValueAtTime(0.14, st + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, st + 0.4);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(st);
+      osc.stop(st + 0.45);
+    });
+  }
+
+  /** 18. 아르낙 사원 조사/전진 차임 (Temple Investigation Chime) */
+  public playTempleChime() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(1760, now + 0.18);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.38);
+  }
 }
 
 export const soundManager = new SoundManager();
