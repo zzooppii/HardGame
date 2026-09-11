@@ -218,17 +218,17 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
           </div>
         </div>
 
-        {/* [우측 46%] 중앙 디포 & 가이드 & 로그 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', height: '100%', minHeight: 0 }}>
+        {/* [우측] 중앙 디포 & 가이드 & 로그 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%', minHeight: 0, overflow: 'hidden' }}>
           
-          {/* 중앙 디포 진열대 & 스플랜더 가이드 배너 & 암시장 */}
-          <div style={{ flex: 1, minHeight: 0 }}>
+          {/* 중앙 디포 진열대 & 스플랜더 가이드 배너 & 암시장 (고유 보드 크기 보존) */}
+          <div style={{ flexShrink: 0 }}>
             <CentralDepotBoard />
           </div>
 
-          {/* 하단 컴팩트 영지 연대기 로그 */}
-          <div className="saboteur-board-panel" style={{ padding: '8px 12px', height: '105px', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+          {/* 하단 영지 연대기 로그 (남는 세로 공간을 100% 채워 단단한 균형 유지) */}
+          <div className="saboteur-board-panel" style={{ padding: '8px 12px', flex: 1, minHeight: '80px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexShrink: 0 }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f8fafc' }}>
                 📜 영지 연대기 (실시간 게임 로그)
               </span>

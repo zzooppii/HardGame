@@ -66,16 +66,13 @@ export const CentralDepotBoard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 실물 보드게임 트레이 감성의 1~6번 디포 진열대 (좌우 2구 슬롯 트레이) */}
+      {/* 2. 실물 보드게임 트레이 감성의 1~6번 디포 진열대 (단단한 62px 실물 타일 토큰 트레이) */}
       <div style={{ 
-        flex: 1, 
         display: 'grid', 
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', 
-        gridTemplateRows: '1fr 1fr', 
+        gridTemplateRows: 'auto auto', 
         gap: '6px', 
-        minHeight: 0,
-        minWidth: 0,
-        overflow: 'hidden'
+        minWidth: 0
       }}>
         {[1, 2, 3, 4, 5, 6].map(depotNum => {
           const tiles = centralDepots[depotNum] || [];
@@ -96,10 +93,8 @@ export const CentralDepotBoard: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px',
-                height: '100%',
                 minWidth: 0,
                 boxSizing: 'border-box',
-                overflow: 'hidden',
                 boxShadow: isMatchingDie 
                   ? '0 0 14px rgba(212, 175, 55, 0.35), inset 0 1px 1px rgba(255,255,255,0.1)' 
                   : 'inset 0 2px 5px rgba(0,0,0,0.5)',
@@ -128,8 +123,8 @@ export const CentralDepotBoard: React.FC = () => {
                 </span>
               </div>
 
-              {/* 좌우 2구 타일 슬롯 트레이 (가로 2열 배치로 세로 공간 최적화) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', width: '100%', flex: 1, minHeight: 0, minWidth: 0 }}>
+              {/* 좌우 2구 타일 슬롯 트레이 (고정 62px 실물 타일 토큰) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', width: '100%', minWidth: 0 }}>
                 {[0, 1].map(slotIdx => {
                   const tile = tiles[slotIdx];
 
@@ -138,17 +133,16 @@ export const CentralDepotBoard: React.FC = () => {
                       <div 
                         key={slotIdx}
                         style={{
-                          height: '100%',
+                          height: '62px',
                           borderRadius: '5px',
-                          border: '1px dashed rgba(255, 255, 255, 0.1)',
+                          border: '1px dashed rgba(255, 255, 255, 0.12)',
                           background: 'rgba(0, 0, 0, 0.25)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: '#475569',
                           fontSize: '0.62rem',
-                          fontWeight: 600,
-                          minHeight: 0
+                          fontWeight: 600
                         }}
                       >
                         [ 빈칸 ]
@@ -167,8 +161,8 @@ export const CentralDepotBoard: React.FC = () => {
                       disabled={!isMatchingDie || currPlayer?.isAI}
                       title={`${tile.name}: ${tile.desc}`}
                       style={{
-                        height: '100%',
-                        padding: '3px 4px',
+                        height: '62px',
+                        padding: '4px 5px',
                         borderRadius: '5px',
                         background: isMatchingDie ? tile.color : 'rgba(25, 34, 29, 0.92)',
                         border: isMatchingDie ? '1.5px solid #facc15' : '1px solid rgba(255, 255, 255, 0.1)',
@@ -184,14 +178,13 @@ export const CentralDepotBoard: React.FC = () => {
                         transition: 'all 0.15s ease',
                         width: '100%',
                         minWidth: 0,
-                        minHeight: 0,
                         boxSizing: 'border-box',
                         overflow: 'hidden',
                         textAlign: 'center'
                       }}
                     >
-                      <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{tile.icon}</span>
-                      <span style={{ fontSize: '0.68rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                      <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>{tile.icon}</span>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', marginTop: '1px' }}>
                         {tile.name}
                       </span>
                       <span style={{ fontSize: '0.55rem', color: isMatchingDie ? '#fef08a' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', opacity: 0.85 }}>
