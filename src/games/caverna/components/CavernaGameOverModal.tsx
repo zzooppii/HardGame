@@ -4,13 +4,14 @@ import { calculateCavernaScore } from '../engine/gameLogic';
 import { Trophy, Crown, RotateCcw, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../../../utils/sound';
+import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 
 interface CavernaGameOverModalProps {
   onReturnToLobby: () => void;
 }
 
 export const CavernaGameOverModal: React.FC<CavernaGameOverModalProps> = ({ onReturnToLobby }) => {
-  const { isGameOver, players, availableFurnishings, initGame } = useCavernaStore();
+  const { isGameOver, players, availableFurnishings, initGame, myPlayerId } = useCavernaStore();
   const [stage, setStage] = useState<number>(1);
 
   useEffect(() => {
@@ -18,6 +19,26 @@ export const CavernaGameOverModal: React.FC<CavernaGameOverModalProps> = ({ onRe
       setStage(1);
       return;
     }
+
+    // 전적 및 업적 플랫폼 저장
+    const scoredPlayers = players.map(p => ({
+      player: p,
+      ...calculateCavernaScore(p, availableFurnishings)
+    })).sort((a, b) => b.total - a.total);
+
+    const myRank = scoredPlayers.findIndex(sp => sp.player.id === myPlayerId) + 1;
+    const myResult = scoredPlayers.find(sp => sp.player.id === myPlayerId) || scoredPlayers[0];
+    const isWinner = myRank === 1;
+
+    usePlatformStore.getState().recordGameResult({
+      gameId: 'caverna',
+      gameTitle: '카베르나: 동굴 농부들',
+      isWin: isWinner,
+      rank: myRank > 0 ? myRank : 1,
+      myScore: myResult.total,
+      totalPlayers: players.length,
+      maxScore: scoredPlayers[0]?.total || myResult.total
+    });
 
     // 4단계 순차 공개 애니메이션
     const timer1 = setTimeout(() => {

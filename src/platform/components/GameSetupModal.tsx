@@ -6,6 +6,7 @@ import { useBurgundyStore, getSerializableBurgundyState } from '../../games/burg
 import { useLeHavreStore, getSerializableLeHavreState } from '../../games/le-havre/store/useLeHavreStore';
 import { useCavernaStore, getSerializableCavernaState } from '../../games/caverna/store/useCavernaStore';
 import { useArnakStore, getSerializableArnakState } from '../../games/arnak/store/useArnakStore';
+import { useTMStore, getSerializableTMState } from '../../games/terraforming-mars/store/useTMStore';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
 
 interface GameSetupModalProps {
@@ -30,11 +31,15 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
   // 온라인 모드 옵션
   const [onlineSubTab, setOnlineSubTab] = useState<'create' | 'join'>('create');
   const [playerName, setPlayerName] = useState<string>(
-    gameTitle.includes('카베르나')
-      ? '드워프 족장'
-      : (gameTitle === '르아브르' 
-          ? '노르망디 선주' 
-          : (gameTitle === '버건디의 성' ? '버건디 영주' : '카리브 모험가'))
+    gameTitle.includes('테라포밍')
+      ? '화성 개척 총수'
+      : (gameTitle.includes('아르낙')
+          ? '아르낙 탐험대장'
+          : (gameTitle.includes('카베르나')
+              ? '드워프 족장'
+              : (gameTitle === '르아브르' 
+                  ? '노르망디 선주' 
+                  : (gameTitle === '버건디의 성' ? '버건디 영주' : '카리브 모험가'))))
   );
   const [inputRoomCode, setInputRoomCode] = useState<string>('');
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
@@ -59,10 +64,22 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
   useEffect(() => {
     peerManager.onLobbyUpdate = (players, code) => {
       setLobbyPlayers(players);
-      setCreatedRoomCode(code);
+      if (code && !createdRoomCode) setCreatedRoomCode(code);
     };
 
     peerManager.onGameStart = (initialState, myAssignedPlayerId) => {
+      if (gameTitle.includes('테라포밍')) {
+        useTMStore.getState().syncRemoteState(initialState);
+        useTMStore.setState({
+          playMode: 'online',
+          myPlayerId: myAssignedPlayerId,
+          isHost: false,
+          roomCode: createdRoomCode || inputRoomCode
+        });
+        onStartGame();
+        return;
+      }
+
       if (gameTitle.includes('아르낙')) {
         useArnakStore.getState().syncRemoteState(initialState);
         useArnakStore.setState({
@@ -140,6 +157,21 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
             payload: { players: updatedLobby, roomCode: createdRoomCode },
             senderId: peerManager.myPeerId || 'host'
           });
+        }
+        return;
+      }
+
+      // 테라포밍 마스 게스트 액션 수신 처리
+      if (gameTitle.includes('테라포밍')) {
+        const store = useTMStore.getState();
+        if (actionName === 'TM_PLAY_CARD') {
+          store.playCardAction(payload.cardId, payload.targetSlotId);
+        } else if (actionName === 'TM_STANDARD_PROJECT') {
+          store.executeStandardProjectAction(payload.projectKey, payload.targetSlotId);
+        } else if (actionName === 'TM_CONVERT_HEAT') {
+          store.convertHeatToTemperatureAction();
+        } else if (actionName === 'TM_PASS_GENERATION') {
+          store.passTurnAction();
         }
         return;
       }
@@ -241,6 +273,10 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onStateSync = (syncedState) => {
+      if (gameTitle.includes('테라포밍')) {
+        useTMStore.getState().syncRemoteState(syncedState);
+        return;
+      }
       if (gameTitle.includes('아르낙')) {
         useArnakStore.getState().syncRemoteState(syncedState);
         return;
@@ -334,6 +370,26 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
         name: p.name,
         peerId: p.peerId
       }));
+
+      if (gameTitle.includes('테라포밍')) {
+        useTMStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
+        const pureInitialState = getSerializableTMState(useTMStore.getState());
+
+        peerManager.broadcast({
+          type: 'START_GAME',
+          payload: {
+            initialState: pureInitialState,
+            playerMappings: lobbyPlayers.map(p => ({
+              peerId: p.peerId,
+              assignedPlayerId: p.assignedPlayerId
+            }))
+          },
+          senderId: peerManager.myPeerId || 'host'
+        });
+
+        onStartGame();
+        return;
+      }
 
       if (gameTitle.includes('아르낙')) {
         useArnakStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
@@ -469,7 +525,9 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
 
   // 솔로 / 로컬 시작
   const handleStartSoloOrLocal = () => {
-    if (gameTitle.includes('아르낙')) {
+    if (gameTitle.includes('테라포밍')) {
+      useTMStore.getState().initGame(playerCount, activeTab === 'solo');
+    } else if (gameTitle.includes('아르낙')) {
       useArnakStore.getState().initGame(playerCount, activeTab === 'solo');
     } else if (gameTitle.includes('카베르나')) {
       useCavernaStore.getState().initGame(playerCount, activeTab === 'solo');

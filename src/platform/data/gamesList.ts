@@ -93,7 +93,7 @@ export const BOARD_GAMES_LIST: BoardGameMeta[] = [
     category: ['카드 엔진 빌딩', '화성 개발', '파라미터 조작', '자원 생산'],
     flavorText: '거대 기업의 총수가 되어 인류가 거주할 수 있도록 붉은 행성 화성을 테라포밍하세요.',
     description: '온도를 올리고 산소를 공급하며 대양 타일을 배치해 화성을 녹색 행성으로 탈바꿈시킵니다. 수백 장의 고유 프로젝트 카드가 만들어내는 무궁무진한 콤보의 정수입니다.',
-    status: 'in_development',
+    status: 'available',
     accentColor: '#ef4444',
     bannerImage: 'linear-gradient(135deg, #450a0a 0%, #1a0303 60%, #ef4444 100%)'
   }

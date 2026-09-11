@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useArnakStore } from '../store/useArnakStore';
+import { useTMStore } from '../store/useTMStore';
 import { calculateTotalScore } from '../engine/gameLogic';
 import { RotateCcw } from 'lucide-react';
 import { soundManager } from '../../../utils/sound';
 import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 
-interface ArnakGameOverModalProps {
+interface TMGameOverModalProps {
   onReturnToLobby: () => void;
 }
 
-export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturnToLobby }) => {
-  const { isGameOver, players, initGame, myPlayerId } = useArnakStore();
+export const TMGameOverModal: React.FC<TMGameOverModalProps> = ({ onReturnToLobby }) => {
+  const { isGameOver, players, mapSlots, initGame, myPlayerId } = useTMStore();
   const [animationStep, setAnimationStep] = useState(0);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
       // 전적 및 업적 플랫폼 저장
       const playerScores = players.map(p => ({
         player: p,
-        ...calculateTotalScore(p)
+        ...calculateTotalScore(p, mapSlots)
       })).sort((a, b) => b.totalScore - a.totalScore);
 
       const myRank = playerScores.findIndex(ps => ps.player.id === myPlayerId) + 1;
@@ -28,8 +28,8 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
       const isWinner = myRank === 1;
 
       usePlatformStore.getState().recordGameResult({
-        gameId: 'arnak',
-        gameTitle: '아르낙의 잊혀진 유적',
+        gameId: 'terraforming-mars',
+        gameTitle: '테라포밍 마스',
         isWin: isWinner,
         rank: myRank > 0 ? myRank : 1,
         myScore: myResult.totalScore,
@@ -51,13 +51,12 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
     } else {
       setAnimationStep(0);
     }
-  }, [isGameOver, myPlayerId, players]);
+  }, [isGameOver, myPlayerId, players, mapSlots]);
 
   if (!isGameOver) return null;
 
-  // 전체 플레이어 최종 점수 계산 및 랭킹 정렬
   const playerScores = players.map(p => {
-    const scores = calculateTotalScore(p);
+    const scores = calculateTotalScore(p, mapSlots);
     return {
       player: p,
       ...scores
@@ -73,7 +72,7 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(5, 15, 12, 0.85)',
+      backgroundColor: 'rgba(5, 5, 10, 0.85)',
       backdropFilter: 'blur(10px)',
       display: 'flex',
       alignItems: 'center',
@@ -85,30 +84,30 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
         width: '100%',
         maxWidth: '720px',
         backgroundColor: '#0f172a',
-        border: '2px solid #10b981',
+        border: '2px solid #ef4444',
         borderRadius: '16px',
-        boxShadow: '0 25px 50px -12px rgba(16, 185, 129, 0.4)',
+        boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.4)',
         padding: '24px',
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
         color: '#f8fafc'
       }}>
-        {/* 상단 승리 타이틀 */}
+        {/* 상단 타이틀 */}
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '36px', marginBottom: '4px' }}>🏆</div>
           <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.02em' }}>
-            아르낙의 잊혀진 유적 탐험 완료!
+            화성 테라포밍 프로젝트 완수!
           </h2>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#34d399' }}>
-            5대 라운드의 정글 탐험과 고대 사원 연구가 마침내 끝났습니다.
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#fca5a5' }}>
+            붉은 행성이 인류의 새로운 녹색 오아시스로 변모했습니다.
           </p>
         </div>
 
-        {/* 1위 우승자 배너 */}
+        {/* 1위 우승 기업 배너 */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.3) 100%)',
-          border: '1.5px solid #10b981',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.35) 100%)',
+          border: '1.5px solid #ef4444',
           borderRadius: '12px',
           padding: '12px',
           display: 'flex',
@@ -117,8 +116,8 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '40px',
-              height: '40px',
+              width: '42px',
+              height: '42px',
               borderRadius: '50%',
               backgroundColor: winner?.player.color,
               display: 'flex',
@@ -127,21 +126,21 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
               fontWeight: 900,
               fontSize: '18px',
               color: '#ffffff',
-              boxShadow: '0 0 12px rgba(16, 185, 129, 0.6)'
+              boxShadow: '0 0 12px rgba(239, 68, 68, 0.6)'
             }}>
               1
             </div>
             <div>
-              <div style={{ fontSize: '0.75rem', color: '#a7f3d0' }}>최고의 수석 고고학자</div>
+              <div style={{ fontSize: '0.75rem', color: '#fca5a5' }}>화성 최고 기여 기업</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
-                {winner?.player.name}
+                {winner?.player.name} ({winner?.player.corporation.name})
               </div>
             </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: '#a7f3d0' }}>최종 탐험 승점</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#facc15' }}>
+            <div style={{ fontSize: '0.75rem', color: '#fca5a5' }}>최종 테라포밍 승점</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#facc15' }}>
               {winner?.totalScore} VP
             </div>
           </div>
@@ -157,11 +156,11 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'rgba(0,0,0,0.4)', borderBottom: '1px solid #334155', color: '#94a3b8' }}>
-                <th style={{ padding: '8px 12px' }}>순위 & 플레이어</th>
-                <th style={{ padding: '8px', textAlign: 'center' }}>연구 트랙</th>
-                <th style={{ padding: '8px', textAlign: 'center' }}>사원 보너스</th>
-                <th style={{ padding: '8px', textAlign: 'center' }}>수호자 제압</th>
-                <th style={{ padding: '8px', textAlign: 'center' }}>카드 - 공포</th>
+                <th style={{ padding: '8px 12px' }}>순위 & 기업</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}>TR 점수</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}>녹지 타일</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}>도시 인접 녹지</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}>카드 승점</th>
                 <th style={{ padding: '8px 12px', textAlign: 'right' }}>총점</th>
               </tr>
             </thead>
@@ -173,19 +172,19 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: ps.player.color }} />
                     <span style={{ fontWeight: 700 }}>{ps.player.name}</span>
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#34d399', fontWeight: 700 }}>
-                    {animationStep >= 1 ? `+${ps.researchPoints}점` : '...'}
+                  <td style={{ padding: '8px', textAlign: 'center', color: '#f87171', fontWeight: 700 }}>
+                    {animationStep >= 1 ? `${ps.trScore}점` : '...'}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'center', color: '#10b981', fontWeight: 700 }}>
+                    {animationStep >= 2 ? `+${ps.greeneryScore}점` : '...'}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'center', color: '#c084fc', fontWeight: 700 }}>
+                    {animationStep >= 3 ? `+${ps.cityScore}점` : '...'}
                   </td>
                   <td style={{ padding: '8px', textAlign: 'center', color: '#fbbf24', fontWeight: 700 }}>
-                    {animationStep >= 2 ? `+${ps.templePoints}점` : '...'}
+                    {animationStep >= 4 ? `+${ps.cardScore}점` : '...'}
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#f43f5e', fontWeight: 700 }}>
-                    {animationStep >= 3 ? `+${ps.guardianPoints}점` : '...'}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#cbd5e1' }}>
-                    {animationStep >= 4 ? `+${ps.cardPoints} - ${ps.fearPenalty}` : '...'}
-                  </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 900, color: '#facc15', fontSize: '0.9rem' }}>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 900, color: '#facc15', fontSize: '0.95rem' }}>
                     {animationStep >= 4 ? `${ps.totalScore}점` : '...'}
                   </td>
                 </tr>
@@ -225,10 +224,10 @@ export const ArnakGameOverModal: React.FC<ArnakGameOverModalProps> = ({ onReturn
             }}
             style={{
               padding: '8px 20px',
-              backgroundColor: '#10b981',
+              backgroundColor: '#ef4444',
               border: 'none',
               borderRadius: '8px',
-              color: '#022c22',
+              color: '#ffffff',
               fontSize: '0.8rem',
               fontWeight: 800,
               cursor: 'pointer'

@@ -4,6 +4,7 @@ import { calculateFinalScore } from '../engine/gameLogic';
 import confetti from 'canvas-confetti';
 import { RotateCcw, Home, Award, Sparkles, Coins, Users as UsersIcon, Package, BookOpen, Crown, FastForward } from 'lucide-react';
 import { soundManager } from '../../../utils/sound';
+import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 
 interface BurgundyGameOverModalProps {
   onReturnToLobby: () => void;
@@ -45,13 +46,13 @@ const RollingNumber: React.FC<{ value: number; duration?: number; onTick?: () =>
     }, stepTime);
 
     return () => clearInterval(timer);
-  }, [value, duration]);
+  }, [value, duration, onTick]);
 
   return <span>{displayValue}</span>;
 };
 
 export const BurgundyGameOverModal: React.FC<BurgundyGameOverModalProps> = ({ onReturnToLobby }) => {
-  const { isGameOver, players, initGame } = useBurgundyStore();
+  const { isGameOver, players, initGame, myPlayerId } = useBurgundyStore();
 
   // 정산 스테이지: 0 (대기) -> 1 (기본 승점) -> 2 (자원 보너스) -> 3 (지식 보너스) -> 4 (최종 랭킹 발표)
   const [stage, setStage] = useState<number>(0);
@@ -60,6 +61,26 @@ export const BurgundyGameOverModal: React.FC<BurgundyGameOverModalProps> = ({ on
     if (isGameOver) {
       setStage(1);
       soundManager.playWoodToken();
+
+      // 전적 및 업적 플랫폼 저장
+      const scoredPlayers = players.map(p => ({
+        player: p,
+        ...calculateFinalScore(p)
+      })).sort((a, b) => b.total - a.total);
+
+      const myRank = scoredPlayers.findIndex(sp => sp.player.id === myPlayerId) + 1;
+      const myResult = scoredPlayers.find(sp => sp.player.id === myPlayerId) || scoredPlayers[0];
+      const isWinner = myRank === 1;
+
+      usePlatformStore.getState().recordGameResult({
+        gameId: 'burgundy',
+        gameTitle: '버건디의 성',
+        isWin: isWinner,
+        rank: myRank > 0 ? myRank : 1,
+        myScore: myResult.total,
+        totalPlayers: players.length,
+        maxScore: scoredPlayers[0]?.total || myResult.total
+      });
 
       // 단계별 순차 오픈 타이머
       const t1 = setTimeout(() => {

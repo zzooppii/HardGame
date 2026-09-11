@@ -5,37 +5,77 @@ import { BurgundyGame } from './games/burgundy/BurgundyGame';
 import { LeHavreGame } from './games/le-havre/LeHavreGame';
 import { CavernaGame } from './games/caverna/CavernaGame';
 import { ArnakGame } from './games/arnak/ArnakGame';
-import { Dices } from 'lucide-react';
+import { TerraformingMarsGame } from './games/terraforming-mars/TerraformingMarsGame';
+import { StatsModal } from './platform/components/StatsModal';
+import { AchievementsModal } from './platform/components/AchievementsModal';
+import { AchievementToast } from './platform/components/AchievementToast';
+import { Dices, Trophy, Award } from 'lucide-react';
 
 export function App() {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
+  const [statsModalOpen, setStatsModalOpen] = useState(false);
+  const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
 
   // 게임 플레이 중에는 플랫폼 헤더/푸터를 숨겨 100vh 완결형 풀스크린 대시보드 제공
   if (activeGameId === 'puerto-rico') {
-    return <PuertoRicoGame onBackToLobby={() => setActiveGameId(null)} />;
+    return (
+      <>
+        <PuertoRicoGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </>
+    );
   }
   if (activeGameId === 'burgundy') {
-    return <BurgundyGame onBackToLobby={() => setActiveGameId(null)} />;
+    return (
+      <>
+        <BurgundyGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </>
+    );
   }
   if (activeGameId === 'le-havre') {
-    return <LeHavreGame onBackToLobby={() => setActiveGameId(null)} />;
+    return (
+      <>
+        <LeHavreGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </>
+    );
   }
   if (activeGameId === 'caverna') {
-    return <CavernaGame onBackToLobby={() => setActiveGameId(null)} />;
+    return (
+      <>
+        <CavernaGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </>
+    );
   }
   if (activeGameId === 'arnak') {
-    return <ArnakGame onBackToLobby={() => setActiveGameId(null)} />;
+    return (
+      <>
+        <ArnakGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </>
+    );
+  }
+  if (activeGameId === 'terraforming-mars') {
+    return (
+      <>
+        <TerraformingMarsGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </>
+    );
   }
 
   return (
     <div className="app-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
+      <AchievementToast />
+
       {/* 플랫폼 상단 글로벌 헤더 */}
       <header style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '12px 18px',
+        padding: '12px 24px',
         borderBottom: '1px solid var(--border-subtle)',
         background: 'rgba(13, 17, 23, 0.9)',
         backdropFilter: 'blur(10px)',
@@ -68,17 +108,65 @@ export function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            className="btn-secondary"
+            onClick={() => setStatsModalOpen(true)}
+            style={{
+              padding: '6px 14px',
+              fontSize: '0.82rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderRadius: '8px'
+            }}
+          >
+            <Trophy size={15} color="#f59e0b" />
+            <span>통합 전적</span>
+          </button>
+
+          <button
+            className="btn-secondary"
+            onClick={() => setAchievementsModalOpen(true)}
+            style={{
+              padding: '6px 14px',
+              fontSize: '0.82rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderRadius: '8px'
+            }}
+          >
+            <Award size={15} color="#38bdf8" />
+            <span>업적 도감</span>
+          </button>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            <span className="badge badge-gold">5대 명작 컬렉션 (푸에르토리코 • 버건디 • 르아브르 • 카베르나 • 아르낙) 플레이 가능</span>
+            <span className="badge badge-gold" style={{ border: '1px solid var(--gold-secondary)' }}>
+              🏆 6대 마스터피스 완결
+            </span>
           </div>
         </div>
       </header>
 
       {/* 화면 라우팅: 로비 */}
       <div style={{ flex: 1 }}>
-        <Lobby onSelectGame={(gameId) => setActiveGameId(gameId)} />
+        <Lobby 
+          onSelectGame={(gameId) => setActiveGameId(gameId)}
+          onOpenStats={() => setStatsModalOpen(true)}
+          onOpenAchievements={() => setAchievementsModalOpen(true)}
+        />
       </div>
+
+      {/* 통합 전적 모달 */}
+      {statsModalOpen && (
+        <StatsModal onClose={() => setStatsModalOpen(false)} />
+      )}
+
+      {/* 업적 도감 모달 */}
+      {achievementsModalOpen && (
+        <AchievementsModal onClose={() => setAchievementsModalOpen(false)} />
+      )}
 
       {/* 플랫폼 푸터 */}
       <footer style={{

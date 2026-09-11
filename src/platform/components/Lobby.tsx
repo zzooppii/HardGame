@@ -2,13 +2,19 @@ import React, { useState } from 'react';
 import { BOARD_GAMES_LIST } from '../data/gamesList';
 import type { BoardGameMeta } from '../types';
 import { GameSetupModal } from './GameSetupModal';
-import { Play, Sparkles, Clock, Users, Flame, BookOpen } from 'lucide-react';
+import { Play, Sparkles, Clock, Users, Flame, BookOpen, Trophy, Award } from 'lucide-react';
 
 interface LobbyProps {
   onSelectGame: (gameId: string) => void;
+  onOpenStats?: () => void;
+  onOpenAchievements?: () => void;
 }
 
-export const Lobby: React.FC<LobbyProps> = ({ onSelectGame }) => {
+export const Lobby: React.FC<LobbyProps> = ({ 
+  onSelectGame,
+  onOpenStats,
+  onOpenAchievements
+}) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
   const [selectedGameForDetail, setSelectedGameForDetail] = useState<BoardGameMeta | null>(null);
   const [setupModalOpen, setSetupModalOpen] = useState<boolean>(false);
@@ -60,10 +66,63 @@ export const Lobby: React.FC<LobbyProps> = ({ onSelectGame }) => {
         <h1 className="font-serif text-gold-gradient" style={{ fontSize: 'clamp(2.2rem, 5vw, 3.4rem)', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '14px' }}>
           Euro Masterpieces
         </h1>
-        <p style={{ maxWidth: '680px', margin: '0 auto 28px auto', fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+        <p style={{ maxWidth: '680px', margin: '0 auto 20px auto', fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
           보드게임 긱(BGG) 역사상 가장 위대한 6대 전략 보드게임을 웹 브라우저에서 직접 경험하세요.
           치밀한 경제 엔진과 직관적인 인터페이스로 설계되었습니다.
         </p>
+
+        {/* 전적 및 업적 퀵 액세스 */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '24px' }}>
+          {onOpenStats && (
+            <button
+              onClick={onOpenStats}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(245, 158, 11, 0.12)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                color: '#f59e0b',
+                padding: '8px 18px',
+                borderRadius: '9999px',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.22)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.12)'}
+            >
+              <Trophy size={16} /> 통산 전적 & 랭킹 분석
+            </button>
+          )}
+
+          {onOpenAchievements && (
+            <button
+              onClick={onOpenAchievements}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(56, 189, 248, 0.12)',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                color: '#38bdf8',
+                padding: '8px 18px',
+                borderRadius: '9999px',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.22)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.12)'}
+            >
+              <Award size={16} /> 18종 마스터피스 업적 도감
+            </button>
+          )}
+        </div>
 
         {/* 카테고리 필터 칩 */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -339,13 +398,15 @@ export const Lobby: React.FC<LobbyProps> = ({ onSelectGame }) => {
           onClose={() => setSetupModalOpen(false)}
           onStartGame={() => {
             setSetupModalOpen(false);
-            const gameId = (targetGameTitle.includes('아르낙'))
-              ? 'arnak'
-              : (targetGameTitle.includes('카베르나')
-                  ? 'caverna'
-                  : (targetGameTitle === '르아브르' 
-                      ? 'le-havre' 
-                      : (targetGameTitle === '버건디의 성' ? 'burgundy' : 'puerto-rico')));
+            const gameId = (targetGameTitle.includes('테라포밍'))
+              ? 'terraforming-mars'
+              : (targetGameTitle.includes('아르낙'))
+                ? 'arnak'
+                : (targetGameTitle.includes('카베르나')
+                    ? 'caverna'
+                    : (targetGameTitle === '르아브르' 
+                        ? 'le-havre' 
+                        : (targetGameTitle === '버건디의 성' ? 'burgundy' : 'puerto-rico')));
             onSelectGame(gameId);
           }}
         />

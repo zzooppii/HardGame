@@ -4,6 +4,7 @@ import { calculateFinalScoreLeHavre } from '../engine/gameLogic';
 import confetti from 'canvas-confetti';
 import { RotateCcw, Home, Sparkles, Crown, Coins, Building2, Ship, AlertTriangle, FastForward } from 'lucide-react';
 import { soundManager } from '../../../utils/sound';
+import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 
 interface LeHavreGameOverModalProps {
   onReturnToLobby: () => void;
@@ -45,13 +46,13 @@ const RollingNumber: React.FC<{ value: number; duration?: number; onTick?: () =>
     }, stepTime);
 
     return () => clearInterval(timer);
-  }, [value, duration]);
+  }, [value, duration, onTick]);
 
   return <span>{displayValue}</span>;
 };
 
 export const LeHavreGameOverModal: React.FC<LeHavreGameOverModalProps> = ({ onReturnToLobby }) => {
-  const { isGameOver, players, buildings, ships, initGame } = useLeHavreStore();
+  const { isGameOver, players, buildings, ships, initGame, myPlayerId } = useLeHavreStore();
 
   const [stage, setStage] = useState<number>(0);
 
@@ -59,6 +60,26 @@ export const LeHavreGameOverModal: React.FC<LeHavreGameOverModalProps> = ({ onRe
     if (isGameOver) {
       setStage(1);
       soundManager.playCoin();
+
+      // 전적 및 업적 플랫폼 저장
+      const scoredPlayers = players.map(p => ({
+        player: p,
+        ...calculateFinalScoreLeHavre(p, buildings, ships)
+      })).sort((a, b) => b.total - a.total);
+
+      const myRank = scoredPlayers.findIndex(sp => sp.player.id === myPlayerId) + 1;
+      const myResult = scoredPlayers.find(sp => sp.player.id === myPlayerId) || scoredPlayers[0];
+      const isWinner = myRank === 1;
+
+      usePlatformStore.getState().recordGameResult({
+        gameId: 'le-havre',
+        gameTitle: '르아브르',
+        isWin: isWinner,
+        rank: myRank > 0 ? myRank : 1,
+        myScore: myResult.total,
+        totalPlayers: players.length,
+        maxScore: scoredPlayers[0]?.total || myResult.total
+      });
 
       const t1 = setTimeout(() => {
         setStage(2);

@@ -4,9 +4,10 @@ import { calculateFinalScore } from '../engine/gameLogic';
 import confetti from 'canvas-confetti';
 import { RotateCcw, Home } from 'lucide-react';
 import { soundManager } from '../../../utils/sound';
+import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 
 export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onReturnToLobby }) => {
-  const { isGameOver, endReason, players, initGame } = usePuertoRicoStore();
+  const { isGameOver, endReason, players, initGame, myPlayerId } = usePuertoRicoStore();
 
   useEffect(() => {
     if (isGameOver) {
@@ -18,8 +19,35 @@ export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onRet
         spread: 80,
         origin: { y: 0.6 }
       });
+
+      // 전적 및 업적 플랫폼 저장
+      const scoredPlayers = players.map(p => ({
+        player: p,
+        score: calculateFinalScore(p)
+      })).sort((a, b) => {
+        if (b.score.total !== a.score.total) {
+          return b.score.total - a.score.total;
+        }
+        const tieA = a.player.doubloons + Object.values(a.player.goods).reduce((x, y) => x + y, 0);
+        const tieB = b.player.doubloons + Object.values(b.player.goods).reduce((x, y) => x + y, 0);
+        return tieB - tieA;
+      });
+
+      const myRank = scoredPlayers.findIndex(sp => sp.player.id === myPlayerId) + 1;
+      const myResult = scoredPlayers.find(sp => sp.player.id === myPlayerId) || scoredPlayers[0];
+      const isWinner = myRank === 1;
+
+      usePlatformStore.getState().recordGameResult({
+        gameId: 'puerto-rico',
+        gameTitle: '푸에르토리코',
+        isWin: isWinner,
+        rank: myRank > 0 ? myRank : 1,
+        myScore: myResult.score.total,
+        totalPlayers: players.length,
+        maxScore: scoredPlayers[0]?.score.total || myResult.score.total
+      });
     }
-  }, [isGameOver]);
+  }, [isGameOver, myPlayerId, players]);
 
   if (!isGameOver) return null;
 

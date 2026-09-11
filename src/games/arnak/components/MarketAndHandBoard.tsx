@@ -102,32 +102,38 @@ export const MarketAndHandBoard: React.FC = () => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '6px', overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
-          {/* 아이템 카드 */}
+          {/* 아이템 카드 (골드 앰버 스타일) */}
           {itemMarket.map(item => {
             const canAfford = currPlayer && currPlayer.resources.coins >= (item.costCoins || 0);
             return (
               <div
                 key={item.id}
                 style={{
-                  background: 'rgba(30, 41, 59, 0.8)',
-                  border: '1px solid #475569',
-                  borderRadius: '6px',
-                  padding: '6px',
+                  background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.45)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  borderRadius: '8px',
+                  padding: '7px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  fontSize: '0.68rem'
+                  fontSize: '0.68rem',
+                  transition: 'transform 0.2s',
+                  cursor: 'default'
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#f8fafc' }}>
-                    <span>{item.name}</span>
-                    <span style={{ color: '#fbbf24' }}>+{item.victoryPoints}점</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800, color: '#f8fafc' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ fontSize: '11px' }}>⚙️</span>
+                      <span>{item.name}</span>
+                    </span>
+                    <span style={{ background: '#f59e0b22', color: '#fbbf24', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>+{item.victoryPoints}점</span>
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: '#38bdf8', margin: '2px 0' }}>
-                    비용: 코인 {item.costCoins}개
+                  <div style={{ fontSize: '0.62rem', color: '#38bdf8', margin: '3px 0', fontWeight: 700 }}>
+                    비용: 🪙 코인 {item.costCoins}개
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '0.62rem', color: '#94a3b8', lineHeight: 1.3 }}>
                     {item.description}
                   </div>
                 </div>
@@ -136,34 +142,36 @@ export const MarketAndHandBoard: React.FC = () => {
                   onClick={() => buyCardAction(item.id, 'item')}
                   disabled={!isMyTurn || !canAfford}
                   style={{
-                    marginTop: '4px',
-                    padding: '2px 6px',
-                    background: canAfford && isMyTurn ? '#d97706' : '#334155',
+                    marginTop: '5px',
+                    padding: '3px 6px',
+                    background: canAfford && isMyTurn ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' : '#334155',
                     border: 'none',
                     borderRadius: '4px',
                     color: '#ffffff',
                     fontSize: '0.62rem',
-                    fontWeight: 700,
-                    cursor: canAfford && isMyTurn ? 'pointer' : 'not-allowed'
+                    fontWeight: 800,
+                    cursor: canAfford && isMyTurn ? 'pointer' : 'not-allowed',
+                    boxShadow: canAfford && isMyTurn ? '0 2px 6px rgba(217, 119, 6, 0.4)' : 'none'
                   }}
                 >
-                  구매
+                  {canAfford ? '장비 구매' : '코인 부족'}
                 </button>
               </div>
             );
           })}
 
-          {/* 유물 카드 */}
+          {/* 유물 카드 (신비로운 보라색 네온 글로우) */}
           {artifactMarket.map(art => {
             const canAfford = currPlayer && currPlayer.resources.compasses >= (art.costCompasses || 0);
             return (
               <div
                 key={art.id}
                 style={{
-                  background: 'rgba(88, 28, 135, 0.3)',
-                  border: '1px solid #a855f7',
-                  borderRadius: '6px',
-                  padding: '6px',
+                  background: 'linear-gradient(145deg, rgba(88, 28, 135, 0.4) 0%, rgba(46, 16, 101, 0.6) 100%)',
+                  border: '1.5px solid #a855f7',
+                  boxShadow: '0 0 14px rgba(168, 85, 247, 0.35)',
+                  borderRadius: '8px',
+                  padding: '7px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -171,14 +179,17 @@ export const MarketAndHandBoard: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#f8fafc' }}>
-                    <span>{art.name}</span>
-                    <span style={{ color: '#c084fc' }}>+{art.victoryPoints}점</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800, color: '#f8fafc' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ fontSize: '11px' }}>🔮</span>
+                      <span>{art.name}</span>
+                    </span>
+                    <span style={{ background: '#a855f733', color: '#e879f9', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>+{art.victoryPoints}점</span>
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: '#e879f9', margin: '2px 0' }}>
-                    비용: 나침반 {art.costCompasses}개
+                  <div style={{ fontSize: '0.62rem', color: '#c084fc', margin: '3px 0', fontWeight: 700 }}>
+                    비용: 🧭 나침반 {art.costCompasses}개
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>
+                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1', lineHeight: 1.3 }}>
                     {art.description}
                   </div>
                 </div>
@@ -187,18 +198,19 @@ export const MarketAndHandBoard: React.FC = () => {
                   onClick={() => buyCardAction(art.id, 'artifact')}
                   disabled={!isMyTurn || !canAfford}
                   style={{
-                    marginTop: '4px',
-                    padding: '2px 6px',
-                    background: canAfford && isMyTurn ? '#9333ea' : '#334155',
+                    marginTop: '5px',
+                    padding: '3px 6px',
+                    background: canAfford && isMyTurn ? 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)' : '#334155',
                     border: 'none',
                     borderRadius: '4px',
                     color: '#ffffff',
                     fontSize: '0.62rem',
-                    fontWeight: 700,
-                    cursor: canAfford && isMyTurn ? 'pointer' : 'not-allowed'
+                    fontWeight: 800,
+                    cursor: canAfford && isMyTurn ? 'pointer' : 'not-allowed',
+                    boxShadow: canAfford && isMyTurn ? '0 2px 8px rgba(147, 51, 234, 0.5)' : 'none'
                   }}
                 >
-                  유물 발굴 (즉시발동)
+                  {canAfford ? '유물 발굴 (즉시발동)' : '나침반 부족'}
                 </button>
               </div>
             );
@@ -243,12 +255,17 @@ export const MarketAndHandBoard: React.FC = () => {
             <div
               key={card.id}
               style={{
-                minWidth: '110px',
-                maxWidth: '120px',
-                background: card.type === 'fear' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(30, 41, 59, 0.9)',
-                border: card.type === 'fear' ? '1px solid #ef4444' : '1px solid #475569',
-                borderRadius: '6px',
-                padding: '6px',
+                minWidth: '115px',
+                maxWidth: '125px',
+                background: card.type === 'fear' 
+                  ? 'linear-gradient(135deg, rgba(127, 29, 29, 0.4) 0%, rgba(69, 10, 10, 0.7) 100%)' 
+                  : (card.type === 'artifact' ? 'rgba(88, 28, 135, 0.3)' : 'rgba(30, 41, 59, 0.9)'),
+                border: card.type === 'fear' 
+                  ? '1.5px solid #ef4444' 
+                  : (card.type === 'artifact' ? '1.5px solid #c084fc' : '1px solid #64748b'),
+                boxShadow: card.type === 'fear' ? '0 0 10px rgba(239, 68, 68, 0.3)' : 'none',
+                borderRadius: '8px',
+                padding: '7px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -256,10 +273,17 @@ export const MarketAndHandBoard: React.FC = () => {
               }}
             >
               <div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: card.type === 'fear' ? '#fca5a5' : '#f8fafc', lineHeight: 1.2 }}>
-                  {card.name}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: card.type === 'fear' ? '#fca5a5' : '#f8fafc', lineHeight: 1.2 }}>
+                    {card.name}
+                  </span>
+                  {card.victoryPoints !== 0 && (
+                    <span style={{ fontSize: '0.62rem', fontWeight: 900, color: card.type === 'fear' ? '#ef4444' : '#fbbf24' }}>
+                      {card.victoryPoints > 0 ? `+${card.victoryPoints}` : card.victoryPoints}
+                    </span>
+                  )}
                 </div>
-                <div style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '3px 0' }}>
+                <div style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '4px 0', lineHeight: 1.3 }}>
                   {card.description}
                 </div>
               </div>
@@ -269,8 +293,8 @@ export const MarketAndHandBoard: React.FC = () => {
                   onClick={() => playCardAction(card.id)}
                   style={{
                     marginTop: '4px',
-                    padding: '2px 6px',
-                    background: '#10b981',
+                    padding: '3px 6px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                     border: 'none',
                     borderRadius: '4px',
                     color: '#022c22',
@@ -280,7 +304,8 @@ export const MarketAndHandBoard: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '2px'
+                    gap: '3px',
+                    boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
                   }}
                 >
                   <Play size={10} /> 사용하기
