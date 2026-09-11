@@ -7,7 +7,8 @@ import { useLeHavreStore, getSerializableLeHavreState } from '../../games/le-hav
 import { useCavernaStore, getSerializableCavernaState } from '../../games/caverna/store/useCavernaStore';
 import { useArnakStore, getSerializableArnakState } from '../../games/arnak/store/useArnakStore';
 import { useTMStore, getSerializableTMState } from '../../games/terraforming-mars/store/useTMStore';
-import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
+import type { AIDifficulty } from '../types';
+import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2, ShieldCheck, Zap, Flame } from 'lucide-react';
 
 interface GameSetupModalProps {
   gameTitle: string;
@@ -27,6 +28,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
   const [playerCount, setPlayerCount] = useState<number>(
     gameTitle === '버건디의 성' || gameTitle === '르아브르' ? 2 : 3
   );
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('easy');
 
   // 온라인 모드 옵션
   const [onlineSubTab, setOnlineSubTab] = useState<'create' | 'join'>('create');
@@ -526,7 +528,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
   // 솔로 / 로컬 시작
   const handleStartSoloOrLocal = () => {
     if (gameTitle.includes('테라포밍')) {
-      useTMStore.getState().initGame(playerCount, activeTab === 'solo');
+      useTMStore.getState().initGame(playerCount, activeTab === 'solo', aiDifficulty);
     } else if (gameTitle.includes('아르낙')) {
       useArnakStore.getState().initGame(playerCount, activeTab === 'solo');
     } else if (gameTitle.includes('카베르나')) {
@@ -675,6 +677,88 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* 솔로 모드 전용: AI 난이도 선택 */}
+                {activeTab === 'solo' && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        AI 난이도 설정
+                      </label>
+                      <span style={{ fontSize: '0.72rem', color: '#f59e0b' }}>
+                        *초보자 테스트는 [입문/초보]를 추천합니다
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setAiDifficulty('easy')}
+                        style={{
+                          padding: '10px 8px',
+                          borderRadius: '8px',
+                          border: aiDifficulty === 'easy' ? '1.5px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.08)',
+                          background: aiDifficulty === 'easy' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          color: aiDifficulty === 'easy' ? '#4ade80' : '#94a3b8',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '4px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        <ShieldCheck size={18} color={aiDifficulty === 'easy' ? '#4ade80' : '#64748b'} />
+                        <span style={{ fontWeight: 700, fontSize: '0.84rem' }}>입문 / 초보 (Easy)</span>
+                        <span style={{ fontSize: '0.68rem', opacity: 0.8 }}>룰 학습 & 테스트용</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAiDifficulty('normal')}
+                        style={{
+                          padding: '10px 8px',
+                          borderRadius: '8px',
+                          border: aiDifficulty === 'normal' ? '1.5px solid #f59e0b' : '1px solid rgba(255, 255, 255, 0.08)',
+                          background: aiDifficulty === 'normal' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          color: aiDifficulty === 'normal' ? '#fbbf24' : '#94a3b8',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '4px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        <Zap size={18} color={aiDifficulty === 'normal' ? '#fbbf24' : '#64748b'} />
+                        <span style={{ fontWeight: 700, fontSize: '0.84rem' }}>보통 (Normal)</span>
+                        <span style={{ fontSize: '0.68rem', opacity: 0.8 }}>균형 잡힌 표준 대전</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAiDifficulty('hard')}
+                        style={{
+                          padding: '10px 8px',
+                          borderRadius: '8px',
+                          border: aiDifficulty === 'hard' ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
+                          background: aiDifficulty === 'hard' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          color: aiDifficulty === 'hard' ? '#f87171' : '#94a3b8',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '4px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        <Flame size={18} color={aiDifficulty === 'hard' ? '#f87171' : '#64748b'} />
+                        <span style={{ fontWeight: 700, fontSize: '0.84rem' }}>베테랑 (Hard)</span>
+                        <span style={{ fontSize: '0.68rem', opacity: 0.8 }}>치밀한 고득점 견제</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px' }}>
                   <button className="btn-gold" onClick={handleStartSoloOrLocal} style={{ width: '100%', padding: '14px' }}>

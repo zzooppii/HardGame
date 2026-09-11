@@ -102,4 +102,5 @@ export interface TMGameState {
   cardMarket: ProjectCard[]; // 카드 연구 마켓
   logs: string[];
   isGameOver: boolean;
+  aiDifficulty?: 'easy' | 'normal' | 'hard';
 }

@@ -1,4 +1,5 @@
 export type GameStatus = 'available' | 'in_development';
+export type AIDifficulty = 'easy' | 'normal' | 'hard';
 
 export interface BoardGameMeta {
   id: string;

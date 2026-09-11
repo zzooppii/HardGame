@@ -24,7 +24,7 @@ interface TMStore extends TMGameState {
   isHost: boolean;
   roomCode: string | null;
 
-  initGame: (playerCount?: number, withAI?: boolean) => void;
+  initGame: (playerCount?: number, withAI?: boolean, aiDifficulty?: 'easy' | 'normal' | 'hard') => void;
   initOnlineGame: (
     playerCount: number,
     humanPlayers: { name: string; peerId: string }[],
@@ -95,7 +95,7 @@ export const useTMStore = create<TMStore>((set, get) => ({
   logs: [],
   isGameOver: false,
 
-  initGame: (playerCount = 2, withAI = true) => {
+  initGame: (playerCount = 2, withAI = true, aiDifficulty: 'easy' | 'normal' | 'hard' = 'normal') => {
     const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
     const names = ['나 (화성 개척 총수)', 'AI 타시스 지사', 'AI 에코라인 바이오', 'AI 헬리온 에너지'];
 
@@ -152,7 +152,8 @@ export const useTMStore = create<TMStore>((set, get) => ({
       oceansPlaced: 0,
       cardMarket: marketPool.slice(0, 4),
       logs: ['🚀 [테라포밍 마스] 화성 개척 프로젝트가 승인되었습니다! 붉은 행성을 인류의 제2의 보금자리로 만드세요.'],
-      isGameOver: false
+      isGameOver: false,
+      aiDifficulty
     });
   },
 
@@ -785,11 +786,16 @@ export const useTMStore = create<TMStore>((set, get) => ({
       const state = get();
       const nextP = state.players[state.currentTurnPlayerIndex];
       if (nextP && nextP.isAI && !state.isGameOver && !nextP.hasPassedThisGen) {
-        const decision = TerraformingMarsAI.decideAction(nextP, state.mapSlots, {
-          temperature: state.temperature,
-          oxygen: state.oxygen,
-          oceansPlaced: state.oceansPlaced
-        });
+        const decision = TerraformingMarsAI.decideAction(
+          nextP, 
+          state.mapSlots, 
+          {
+            temperature: state.temperature,
+            oxygen: state.oxygen,
+            oceansPlaced: state.oceansPlaced
+          },
+          state.aiDifficulty || 'normal'
+        );
 
         switch (decision.action) {
           case 'convert_plants':

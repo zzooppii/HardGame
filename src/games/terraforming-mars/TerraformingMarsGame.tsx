@@ -5,7 +5,9 @@ import { CorporationMat } from './components/CorporationMat';
 import { ProjectCardsPanel } from './components/ProjectCardsPanel';
 import { TMRuleGuideModal } from './components/TMRuleGuideModal';
 import { TMGameOverModal } from './components/TMGameOverModal';
-import { Volume2, VolumeX, LogOut, BookOpen, Globe, Copy, Check } from 'lucide-react';
+import { TMHintAdvisor } from './engine/hintAdvisor';
+import type { ActionHint } from './engine/hintAdvisor';
+import { Volume2, VolumeX, LogOut, BookOpen, Globe, Copy, Check, Lightbulb, X } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import { subscribeFeedback, showFeedback } from '../../utils/feedback';
 
@@ -29,13 +31,20 @@ export const TerraformingMarsGame: React.FC<TerraformingMarsGameProps> = ({ onBa
     initGame,
     playMode,
     roomCode,
-    myPlayerId
+    myPlayerId,
+    temperature,
+    oxygen,
+    oceansPlaced,
+    mapSlots,
+    aiDifficulty
   } = useTMStore();
 
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [currentHint, setCurrentHint] = useState<ActionHint | null>(null);
+  const [isHintModalOpen, setIsHintModalOpen] = useState(false);
 
   useEffect(() => {
     if (players.length === 0) {
@@ -204,6 +213,52 @@ export const TerraformingMarsGame: React.FC<TerraformingMarsGameProps> = ({ onBa
             </div>
           )}
 
+          {/* AI 난이도 뱃지 (솔로 모드인 경우) */}
+          {playMode === 'solo' && (
+            <span style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: '6px',
+              background: aiDifficulty === 'easy' ? 'rgba(34, 197, 94, 0.15)' : (aiDifficulty === 'hard' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.15)'),
+              border: `1px solid ${aiDifficulty === 'easy' ? '#22c55e' : (aiDifficulty === 'hard' ? '#ef4444' : '#f59e0b')}`,
+              color: aiDifficulty === 'easy' ? '#4ade80' : (aiDifficulty === 'hard' ? '#f87171' : '#fbbf24')
+            }}>
+              AI: {aiDifficulty === 'easy' ? '입문/초보' : (aiDifficulty === 'hard' ? '베테랑' : '보통')}
+            </span>
+          )}
+
+          {/* 초보자 추천 액션 도우미 버튼 */}
+          <button
+            onClick={() => {
+              soundManager.playClick();
+              const hint = TMHintAdvisor.getRecommendedAction(myPlayer, mapSlots, {
+                temperature,
+                oxygen,
+                oceansPlaced
+              });
+              setCurrentHint(hint);
+              setIsHintModalOpen(true);
+            }}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.25) 100%)',
+              border: '1px solid #f59e0b',
+              color: '#fbbf24',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: '0 0 10px rgba(245, 158, 11, 0.2)'
+            }}
+            title="초보자를 위한 실시간 추천 액션 가이드"
+          >
+            <Lightbulb size={13} color="#fbbf24" /> 추천 액션
+          </button>
+
           {/* 규칙 가이드 버튼 */}
           <button
             onClick={() => {
@@ -327,6 +382,107 @@ export const TerraformingMarsGame: React.FC<TerraformingMarsGameProps> = ({ onBa
       {/* 모달 */}
       <TMRuleGuideModal isOpen={isRuleModalOpen} onClose={() => setIsRuleModalOpen(false)} />
       <TMGameOverModal onReturnToLobby={onBackToLobby} />
+
+      {/* 초보자 추천 액션 도우미 팝오버 모달 */}
+      {isHintModalOpen && currentHint && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(5, 5, 10, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9990,
+          padding: '20px'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '520px',
+            background: 'linear-gradient(145deg, #182032 0%, #0d1322 100%)',
+            border: '2px solid #f59e0b',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(245, 158, 11, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Lightbulb size={18} color="#1c1103" />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 800, letterSpacing: '0.5px' }}>
+                    초보자 1인 테스트 스마트 도우미
+                  </span>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#f8fafc', fontWeight: 800 }}>
+                    {currentHint.title}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsHintModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.3)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '10px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#e2e8f0' }}>
+                💡 왜 이 행동을 추천하나요?
+              </div>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                {currentHint.reason}
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '10px',
+              padding: '12px',
+              fontSize: '0.8rem',
+              color: '#fbbf24',
+              lineHeight: 1.4
+            }}>
+              👉 <strong>실행 방법:</strong> {currentHint.detail}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <button
+                className="btn-gold"
+                onClick={() => setIsHintModalOpen(false)}
+                style={{ padding: '8px 20px', fontSize: '0.85rem' }}
+              >
+                이해했습니다
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 플로팅 피드백 */}
       {feedbacks.map((f) => (
