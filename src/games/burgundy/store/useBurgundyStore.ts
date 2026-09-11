@@ -671,3 +671,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     set({ uiTheme: nextTheme });
   }
 }));
+
+if (typeof window !== 'undefined') {
+  (window as any).__BURGUNDY_STORE__ = useBurgundyStore;
+}

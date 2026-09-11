@@ -261,6 +261,70 @@ class SoundManager {
       osc.stop(now + delay + 0.06);
     });
   }
+
+  /** 9. 승점 카운팅 롤링 틱 소리 (Score Rolling Tick) */
+  public playScoreTick() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(950, now);
+    osc.frequency.exponentialRampToValueAtTime(700, now + 0.025);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.03);
+  }
+
+  /** 10. 웅장한 대승리 팡파레 (Grand Victory Fanfare with Chord Harmony) */
+  public playGrandFanfare() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    // 화려한 금빛 아르페지오 및 종지 화음
+    const notes = [
+      { f: 523.25, t: 0, d: 0.12 },     // C5
+      { f: 659.25, t: 0.12, d: 0.12 },  // E5
+      { f: 783.99, t: 0.24, d: 0.12 },  // G5
+      { f: 1046.50, t: 0.36, d: 0.2 },  // C6
+      { f: 880.00, t: 0.56, d: 0.12 },  // A5
+      { f: 987.77, t: 0.68, d: 0.12 },  // B5
+      { f: 1046.50, t: 0.80, d: 0.8 },  // C6 (대단원)
+      { f: 523.25, t: 0.80, d: 0.8 },   // C5 베이스 화음
+      { f: 659.25, t: 0.80, d: 0.8 }    // E5 하모니
+    ];
+
+    notes.forEach((note) => {
+      const startTime = now + note.t;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(note.f, startTime);
+
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.18, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + note.d);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + note.d + 0.05);
+    });
+  }
 }
 
 export const soundManager = new SoundManager();

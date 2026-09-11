@@ -58,7 +58,24 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
         setFeedbacks((prev) => prev.filter((f) => f.id !== item.id));
       }, 1200);
     });
-    return unsubscribe;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'G' && e.shiftKey) {
+        useBurgundyStore.setState({ isGameOver: true });
+      }
+    };
+    const handleGameOverEvent = () => {
+      useBurgundyStore.setState({ isGameOver: true });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('test-gameover', handleGameOverEvent);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('test-gameover', handleGameOverEvent);
+    };
   }, []);
 
   const handleToggleMute = () => {
