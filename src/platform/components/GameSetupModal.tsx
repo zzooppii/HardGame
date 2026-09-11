@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { peerManager } from '../network/peerManager';
 import type { LobbyPlayer } from '../network/peerManager';
 import { usePuertoRicoStore, getSerializableGameState } from '../../games/puerto-rico/store/usePuertoRicoStore';
-import { useBurgundyStore } from '../../games/burgundy/store/useBurgundyStore';
+import { useBurgundyStore, getSerializableBurgundyState } from '../../games/burgundy/store/useBurgundyStore';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
 
 interface GameSetupModalProps {
@@ -20,11 +20,13 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
   const [activeTab, setActiveTab] = useState<'solo' | 'local' | 'online'>('solo');
 
   // 솔로 / 로컬 모드 옵션
-  const [playerCount, setPlayerCount] = useState<number>(3);
+  const [playerCount, setPlayerCount] = useState<number>(gameTitle === '버건디의 성' ? 2 : 3);
 
   // 온라인 모드 옵션
   const [onlineSubTab, setOnlineSubTab] = useState<'create' | 'join'>('create');
-  const [playerName, setPlayerName] = useState<string>('카리브 모험가');
+  const [playerName, setPlayerName] = useState<string>(
+    gameTitle === '버건디의 성' ? '버건디 영주' : '카리브 모험가'
+  );
   const [inputRoomCode, setInputRoomCode] = useState<string>('');
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
   const [lobbyPlayers, setLobbyPlayers] = useState<LobbyPlayer[]>([]);
@@ -52,6 +54,18 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onGameStart = (initialState, myAssignedPlayerId) => {
+      if (gameTitle === '버건디의 성') {
+        useBurgundyStore.getState().syncRemoteState(initialState);
+        useBurgundyStore.setState({
+          playMode: 'online',
+          myPlayerId: myAssignedPlayerId,
+          isHost: false,
+          roomCode: createdRoomCode || inputRoomCode
+        });
+        onStartGame();
+        return;
+      }
+
       syncRemoteState(initialState);
       usePuertoRicoStore.setState({
         playMode: 'online',
@@ -85,7 +99,36 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
         return;
       }
 
-      // 게스트가 보낸 게임 액션 실행
+      // 버건디의 성 게스트 액션 수신 처리
+      if (gameTitle === '버건디의 성') {
+        const store = useBurgundyStore.getState();
+        const actionFn = (store as any)[actionName];
+        if (typeof actionFn === 'function') {
+          if (actionName === 'takeTileFromDepot') {
+            if (payload.selectedDieIndex !== undefined) store.selectDie(payload.selectedDieIndex);
+            actionFn(payload.depotNumber, payload.tileId);
+          } else if (actionName === 'placeTileFromStorage') {
+            if (payload.selectedDieIndex !== undefined) store.selectDie(payload.selectedDieIndex);
+            if (payload.selectedKeySlotIndex !== undefined) store.selectKeySlot(payload.selectedKeySlotIndex);
+            actionFn(payload.slotId);
+          } else if (actionName === 'sellGoodsAction') {
+            if (payload.selectedDieIndex !== undefined) store.selectDie(payload.selectedDieIndex);
+            actionFn(payload.goodsDieNumber);
+          } else if (actionName === 'takeWorkersAction') {
+            if (payload.selectedDieIndex !== undefined) store.selectDie(payload.selectedDieIndex);
+            actionFn();
+          } else if (actionName === 'buyFromBlackMarket') {
+            actionFn(payload.tileId);
+          } else if (actionName === 'adjustDieWithWorker') {
+            actionFn(payload.dieIndex, payload.delta);
+          } else {
+            actionFn();
+          }
+        }
+        return;
+      }
+
+      // 푸에르토리코 게스트 액션 수신 처리
       const store = usePuertoRicoStore.getState();
       const actionFn = (store as any)[actionName];
       if (typeof actionFn === 'function') {
@@ -101,18 +144,24 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onStateSync = (syncedState) => {
+      if (gameTitle === '버건디의 성') {
+        useBurgundyStore.getState().syncRemoteState(syncedState);
+        return;
+      }
       syncRemoteState(syncedState);
     };
 
     return () => {
       // 컴포넌트 언마운트 시 콜백 정리
     };
-  }, [lobbyPlayers, playerCount, createdRoomCode, inputRoomCode]);
+  }, [lobbyPlayers, playerCount, createdRoomCode, inputRoomCode, gameTitle]);
 
   // 호스트: 방 만들기 실행
   const handleCreateRoom = () => {
     setIsConnecting(true);
     setOnlineError(null);
+
+    const gamePrefix = gameTitle === '버건디의 성' ? 'burgundy' : 'pr';
 
     peerManager.createRoom(
       playerName,
@@ -131,7 +180,8 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
       (err) => {
         setIsConnecting(false);
         setOnlineError('방 생성에 실패했습니다: ' + (err.message || '네트워크 오류'));
-      }
+      },
+      gamePrefix
     );
   };
 
@@ -145,6 +195,8 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     setIsConnecting(true);
     setOnlineError(null);
 
+    const gamePrefix = gameTitle === '버건디의 성' ? 'burgundy' : 'pr';
+
     peerManager.joinRoom(
       inputRoomCode,
       playerName,
@@ -155,7 +207,8 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
       (_err) => {
         setIsConnecting(false);
         setOnlineError('방 참가에 실패했습니다. 방 코드를 확인해주세요.');
-      }
+      },
+      gamePrefix
     );
   };
 
@@ -172,6 +225,26 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
         name: p.name,
         peerId: p.peerId
       }));
+
+      if (gameTitle === '버건디의 성') {
+        useBurgundyStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
+        const pureInitialState = getSerializableBurgundyState(useBurgundyStore.getState());
+
+        peerManager.broadcast({
+          type: 'START_GAME',
+          payload: {
+            initialState: pureInitialState,
+            playerMappings: lobbyPlayers.map(p => ({
+              peerId: p.peerId,
+              assignedPlayerId: p.assignedPlayerId
+            }))
+          },
+          senderId: peerManager.myPeerId || 'host'
+        });
+
+        onStartGame();
+        return;
+      }
 
       initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
 

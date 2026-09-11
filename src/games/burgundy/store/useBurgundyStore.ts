@@ -7,7 +7,15 @@ import { BurgundyAI } from '../engine/aiPlayer';
 import { soundManager } from '../../../utils/sound';
 import { showFeedback } from '../../../utils/feedback';
 
+import { peerManager } from '../../../platform/network/peerManager';
+
 interface BurgundyState {
+  // 멀티플레이 상태
+  playMode: 'solo' | 'local_pass' | 'online';
+  myPlayerId: string;
+  isHost: boolean;
+  roomCode: string | null;
+
   phase: BurgundyPhase;
   round: number; // 1 ~ 5
   players: PlayerBurgundy[];
@@ -26,6 +34,16 @@ interface BurgundyState {
 
   // 액션
   initGame: (playerCount?: number, withAI?: boolean) => void;
+  initOnlineGame: (
+    playerCount: number,
+    humanPlayers: { name: string; peerId: string }[],
+    roomCode: string,
+    myPlayerId: string,
+    isHost: boolean
+  ) => void;
+  syncRemoteState: (newState: Partial<BurgundyState>) => void;
+  syncToPeers: () => void;
+
   selectDie: (dieIndex: 0 | 1 | null) => void;
   selectKeySlot: (slotIndex: number | null) => void;
   adjustDieWithWorker: (dieIndex: 0 | 1, delta: number) => void;
@@ -40,7 +58,25 @@ interface BurgundyState {
 
 const PHASES: BurgundyPhase[] = ['A', 'B', 'C', 'D', 'E'];
 
+export const getSerializableBurgundyState = (state: BurgundyState) => ({
+  phase: state.phase,
+  round: state.round,
+  players: state.players,
+  currentTurnPlayerIndex: state.currentTurnPlayerIndex,
+  centralDepots: state.centralDepots,
+  blackMarketDepot: state.blackMarketDepot,
+  tileDeck: state.tileDeck,
+  goodsDeck: state.goodsDeck,
+  logs: state.logs,
+  isGameOver: state.isGameOver,
+});
+
 export const useBurgundyStore = create<BurgundyState>((set, get) => ({
+  playMode: 'solo',
+  myPlayerId: 'p-0',
+  isHost: true,
+  roomCode: null,
+
   phase: 'A',
   round: 1,
   players: [],
@@ -54,6 +90,19 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
   selectedDieIndex: null,
   selectedKeySlotIndex: null,
   uiTheme: (typeof localStorage !== 'undefined' && localStorage.getItem('pr_ui_theme') === 'modern') ? 'modern' : 'tabletop',
+
+  syncToPeers: () => {
+    if (get().playMode === 'online' && get().isHost) {
+      peerManager.broadcastStateSync(getSerializableBurgundyState(get()));
+    }
+  },
+
+  syncRemoteState: (newState) => {
+    set((state) => ({
+      ...state,
+      ...newState
+    }));
+  },
 
   initGame: (playerCount = 2, withAI = true) => {
     const tileDeck = generateTilePool();
@@ -102,6 +151,10 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     soundManager.playDiceRoll();
 
     set({
+      playMode: withAI ? 'solo' : 'local_pass',
+      myPlayerId: 'p-0',
+      isHost: true,
+      roomCode: null,
       phase: 'A',
       round: 1,
       players,
@@ -117,6 +170,77 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     });
   },
 
+  // 온라인 실시간 멀티플레이 초기화
+  initOnlineGame: (playerCount, humanPlayers, roomCode, myPlayerId, isHost) => {
+    const tileDeck = generateTilePool();
+    const goodsDeck = generateGoodsTiles();
+
+    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
+    const defaultAINames = ['AI 볼테르', 'AI 루이 14세', 'AI 잔 다르크'];
+
+    const players: PlayerBurgundy[] = [];
+    for (let i = 0; i < playerCount; i++) {
+      const isHuman = i < humanPlayers.length;
+      const playerName = isHuman ? humanPlayers[i].name : defaultAINames[i - humanPlayers.length];
+
+      players.push({
+        id: `p-${i}`,
+        name: playerName,
+        color: colors[i % colors.length],
+        isAI: !isHuman,
+        vp: 0,
+        silverlings: 1,
+        workers: i + 1,
+        keySlots: [null, null, null],
+        goods: [goodsDeck.pop()!],
+        soldGoodsCount: 0,
+        duchy: createInitialDuchy(),
+        dice: [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1],
+        usedDice: [false, false],
+        turnOrderPos: playerCount - i
+      });
+    }
+
+    const centralDepots: Record<number, HexTile[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    for (let d = 1; d <= 6; d++) {
+      for (let c = 0; c < playerCount; c++) {
+        if (tileDeck.length > 0) {
+          centralDepots[d].push(tileDeck.pop()!);
+        }
+      }
+    }
+
+    const blackMarketDepot: HexTile[] = [];
+    for (let b = 0; b < 4; b++) {
+      if (tileDeck.length > 0) blackMarketDepot.push(tileDeck.pop()!);
+    }
+
+    soundManager.playDiceRoll();
+
+    set({
+      playMode: 'online',
+      myPlayerId,
+      isHost,
+      roomCode,
+      phase: 'A',
+      round: 1,
+      players,
+      currentTurnPlayerIndex: 0,
+      centralDepots,
+      blackMarketDepot,
+      tileDeck,
+      goodsDeck,
+      logs: [`🌐 온라인 멀티플레이 대전이 시작되었습니다! (방 코드: ${roomCode})`],
+      isGameOver: false,
+      selectedDieIndex: 0,
+      selectedKeySlotIndex: null
+    });
+
+    if (isHost) {
+      get().syncToPeers();
+    }
+  },
+
   selectDie: (dieIndex) => {
     soundManager.playClick();
     set({ selectedDieIndex: dieIndex });
@@ -129,6 +253,11 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
 
   // 일꾼 토큰을 소모하여 주사위 눈금 변경 (+1 또는 -1)
   adjustDieWithWorker: (dieIndex, delta) => {
+    if (get().playMode === 'online' && !get().isHost) {
+      peerManager.sendAction('adjustDieWithWorker', { dieIndex, delta });
+      return;
+    }
+
     const { players, currentTurnPlayerIndex } = get();
     const curr = players[currentTurnPlayerIndex];
     if (curr.workers <= 0 || curr.usedDice[dieIndex]) return;
@@ -150,10 +279,17 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
 
     set({ players: updatedPlayers });
     showFeedback(`주사위 눈금 변경: [${val}] (일꾼 -1)`);
+    get().syncToPeers();
   },
 
   // 중앙 디포에서 타일 가져오기
   takeTileFromDepot: (depotNumber, tileId) => {
+    if (get().playMode === 'online' && !get().isHost) {
+      const { selectedDieIndex } = get();
+      peerManager.sendAction('takeTileFromDepot', { depotNumber, tileId, selectedDieIndex });
+      return true;
+    }
+
     const { players, currentTurnPlayerIndex, selectedDieIndex, centralDepots, logs } = get();
     const curr = players[currentTurnPlayerIndex];
     if (selectedDieIndex === null || curr.usedDice[selectedDieIndex]) return false;
@@ -202,12 +338,19 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       logs: [`${curr.name}: ${depotNumber}번 디포에서 [${tile.name}] 타일 획득`, ...logs]
     });
 
+    get().syncToPeers();
     get().endTurnIfFinished();
     return true;
   },
 
   // 내 보관소에서 영지(Duchy) 슬롯으로 타일 배치
   placeTileFromStorage: (slotId) => {
+    if (get().playMode === 'online' && !get().isHost) {
+      const { selectedDieIndex, selectedKeySlotIndex } = get();
+      peerManager.sendAction('placeTileFromStorage', { slotId, selectedDieIndex, selectedKeySlotIndex });
+      return true;
+    }
+
     const { players, currentTurnPlayerIndex, selectedDieIndex, selectedKeySlotIndex, phase, logs } = get();
     const curr = players[currentTurnPlayerIndex];
     if (selectedDieIndex === null || selectedKeySlotIndex === null) {
@@ -272,12 +415,19 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       logs: [`${curr.name}: ${res.message}`, ...logs]
     });
 
+    get().syncToPeers();
     get().endTurnIfFinished();
     return true;
   },
 
   // 상품 판매 액션
   sellGoodsAction: (goodsDieNumber) => {
+    if (get().playMode === 'online' && !get().isHost) {
+      const { selectedDieIndex } = get();
+      peerManager.sendAction('sellGoodsAction', { goodsDieNumber, selectedDieIndex });
+      return true;
+    }
+
     const { players, currentTurnPlayerIndex, selectedDieIndex, logs } = get();
     const curr = players[currentTurnPlayerIndex];
     if (selectedDieIndex === null || curr.usedDice[selectedDieIndex]) return false;
@@ -312,12 +462,19 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       logs: [`${curr.name}: [${goodsDieNumber}번 상품] ${res.goodsSold.length}개 판매 (+${res.vpGained} VP, +${res.silverGained} 은화)`, ...logs]
     });
 
+    get().syncToPeers();
     get().endTurnIfFinished();
     return true;
   },
 
   // 일꾼 2개 영입 기본 액션
   takeWorkersAction: () => {
+    if (get().playMode === 'online' && !get().isHost) {
+      const { selectedDieIndex } = get();
+      peerManager.sendAction('takeWorkersAction', { selectedDieIndex });
+      return true;
+    }
+
     const { players, currentTurnPlayerIndex, selectedDieIndex, logs } = get();
     const curr = players[currentTurnPlayerIndex];
     if (selectedDieIndex === null || curr.usedDice[selectedDieIndex]) return false;
@@ -341,12 +498,18 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       logs: [`${curr.name}: 주사위를 사용하여 일꾼 2개 획득`, ...logs]
     });
 
+    get().syncToPeers();
     get().endTurnIfFinished();
     return true;
   },
 
   // 암시장에서 은화 2개로 타일 즉시 구매
   buyFromBlackMarket: (tileId) => {
+    if (get().playMode === 'online' && !get().isHost) {
+      peerManager.sendAction('buyFromBlackMarket', { tileId });
+      return true;
+    }
+
     const { players, currentTurnPlayerIndex, blackMarketDepot, logs } = get();
     const curr = players[currentTurnPlayerIndex];
     if (curr.silverlings < 2) {
@@ -386,6 +549,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       logs: [`${curr.name}: 은화 2개로 암시장에서 [${tile.name}] 구매`, ...logs]
     });
 
+    get().syncToPeers();
     return true;
   },
 
@@ -416,6 +580,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
           currentTurnPlayerIndex: 0,
           selectedDieIndex: 0
         });
+        get().syncToPeers();
       } else {
         // 페이즈 완료
         const currentPhaseIdx = PHASES.indexOf(phase);
@@ -451,9 +616,11 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
             currentTurnPlayerIndex: 0,
             selectedDieIndex: 0
           });
+          get().syncToPeers();
         } else {
           // 게임 완전 종료!
           set({ isGameOver: true });
+          get().syncToPeers();
           return;
         }
       }
@@ -462,6 +629,12 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
         currentTurnPlayerIndex: nextPlayerIndex,
         selectedDieIndex: 0
       });
+      get().syncToPeers();
+    }
+
+    // 온라인 모드일 때 AI 턴 처리는 오직 호스트만 수행
+    if (get().playMode === 'online' && !get().isHost) {
+      return;
     }
 
     // AI 플레이어 턴인 경우 자동 실행

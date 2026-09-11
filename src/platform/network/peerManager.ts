@@ -50,15 +50,18 @@ class PeerNetworkManager {
     return code;
   }
 
+  public currentGamePrefix: string = 'pr';
+
   /**
    * 호스트: 방 생성
    */
-  createRoom(hostName: string, onReady: (roomCode: string) => void, onError: (err: any) => void) {
+  createRoom(hostName: string, onReady: (roomCode: string) => void, onError: (err: any) => void, gamePrefix: string = 'pr') {
     this.isHost = true;
     this.myName = hostName;
+    this.currentGamePrefix = gamePrefix;
     const code = this.generateRoomCode();
     this.roomCode = code;
-    const peerId = `euromaster-pr-${code.toLowerCase()}`;
+    const peerId = `euromaster-${gamePrefix}-${code.toLowerCase()}`;
 
     if (this.peer) {
       this.peer.destroy();
@@ -86,11 +89,12 @@ class PeerNetworkManager {
   /**
    * 게스트: 방 참가
    */
-  joinRoom(roomCode: string, guestName: string, onConnected: () => void, onError: (err: any) => void) {
+  joinRoom(roomCode: string, guestName: string, onConnected: () => void, onError: (err: any) => void, gamePrefix: string = 'pr') {
     this.isHost = false;
     this.myName = guestName;
+    this.currentGamePrefix = gamePrefix;
     this.roomCode = roomCode.toUpperCase().trim();
-    const targetHostPeerId = `euromaster-pr-${this.roomCode.toLowerCase()}`;
+    const targetHostPeerId = `euromaster-${gamePrefix}-${this.roomCode.toLowerCase()}`;
 
     if (this.peer) {
       this.peer.destroy();
@@ -258,6 +262,10 @@ class PeerNetworkManager {
       payload: { actionName, args, senderPlayerId },
       senderId: this.myPeerId || 'guest'
     });
+  }
+
+  sendAction(actionName: string, args: any, senderPlayerId?: string) {
+    this.sendActionToHost(actionName, args, senderPlayerId || this.myPeerId || 'guest');
   }
 
   /**

@@ -4,7 +4,7 @@ import { DuchyBoard } from './components/DuchyBoard';
 import { CentralDepotBoard } from './components/CentralDepotBoard';
 import { PlayerBottomTray } from './components/PlayerBottomTray';
 import { BurgundyGameOverModal } from './components/BurgundyGameOverModal';
-import { Volume2, VolumeX, HelpCircle, LogOut } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, LogOut, Globe, Copy, Check } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import { subscribeFeedback } from '../../utils/feedback';
 
@@ -21,6 +21,9 @@ interface FeedbackItem {
 
 export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => {
   const {
+    playMode,
+    roomCode,
+    myPlayerId,
     phase,
     round,
     players,
@@ -30,13 +33,23 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
   } = useBurgundyStore();
 
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
+  const [copied, setCopied] = useState(false);
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [viewingPlayerId, setViewingPlayerId] = useState<string>('p-0');
   const [showRulesModal, setShowRulesModal] = useState(false);
 
   useEffect(() => {
-    initGame(2, true);
+    if (players.length === 0) {
+      initGame(2, true);
+    }
   }, []);
+
+  useEffect(() => {
+    // 온라인 모드일 때 내 플레이어 id로 기본 보기 설정
+    if (playMode === 'online' && myPlayerId) {
+      setViewingPlayerId(myPlayerId);
+    }
+  }, [playMode, myPlayerId]);
 
   useEffect(() => {
     const unsubscribe = subscribeFeedback((item) => {
@@ -54,9 +67,22 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
     if (!muted) soundManager.playCoin();
   };
 
+  const handleCopyInvite = () => {
+    if (!roomCode) return;
+    let host = window.location.host;
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      host = `192.168.0.18:${window.location.port || '5173'}`;
+    }
+    const url = `${window.location.protocol}//${host}${window.location.pathname}?room=${roomCode}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const currTurnPlayer = players[currentTurnPlayerIndex];
   const viewedPlayer = players.find(p => p.id === viewingPlayerId) || players[0];
-  const aiPlayer = players.find(p => p.isAI) || players[1];
+  const otherPlayer = players.find(p => p.id !== (playMode === 'online' ? myPlayerId : 'p-0')) || players[1];
+  const isMyTurn = playMode !== 'online' || currTurnPlayer?.id === myPlayerId;
 
   return (
     <div 
@@ -75,14 +101,14 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
       }}
     >
       
-      {/* 1. 컴팩트 상단 헤더 & 스플랜더식 상대방(AI) 현황 바 */}
+      {/* 1. 컴팩트 상단 헤더 & 스플랜더식 상대방 현황 바 */}
       <header style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingBottom: '8px',
         borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
-        marginBottom: '10px',
+        marginBottom: '8px',
         flexShrink: 0
       }}>
         {/* 좌측: 타이틀 & 페이즈 */}
@@ -102,40 +128,75 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
             <span style={{ fontSize: '0.62rem', letterSpacing: '0.8px', color: '#d4af37', fontWeight: 800, marginLeft: '2px' }}>PHASE</span>
             <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginLeft: '6px' }}>라운드 {round}/5</span>
           </div>
+
+          {/* 온라인 모드 방 코드 배지 */}
+          {playMode === 'online' && roomCode && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(168, 85, 247, 0.15)',
+              border: '1px solid rgba(168, 85, 247, 0.4)',
+              borderRadius: '8px',
+              padding: '3px 10px'
+            }}>
+              <Globe size={13} color="#c084fc" />
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e9d5ff' }}>방: {roomCode}</span>
+              <button
+                onClick={handleCopyInvite}
+                style={{
+                  padding: '2px 8px',
+                  fontSize: '0.7rem',
+                  borderRadius: '4px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                {copied ? <Check size={11} color="#4ade80" /> : <Copy size={11} />}
+                {copied ? '복사됨' : '초대 링크'}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* 중앙: 스플랜더 상단 벤치마크 - 상대방(AI) 실시간 현황 캡슐 */}
-        {aiPlayer && (
+        {/* 중앙: 스플랜더 상단 벤치마크 - 상대방 실시간 현황 캡슐 */}
+        {otherPlayer && (
           <div 
             onClick={() => {
               soundManager.playClick();
-              setViewingPlayerId(viewingPlayerId === aiPlayer.id ? 'p-0' : aiPlayer.id);
+              const myId = playMode === 'online' ? myPlayerId : 'p-0';
+              setViewingPlayerId(viewingPlayerId === otherPlayer.id ? myId : otherPlayer.id);
             }}
-            title={viewingPlayerId === aiPlayer.id ? '내 영지로 돌아가기' : '상대방 영지 맵 구경하기'}
+            title={viewingPlayerId === otherPlayer.id ? '내 영지로 돌아가기' : '상대방 영지 맵 구경하기'}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              background: viewingPlayerId === aiPlayer.id ? 'rgba(38, 54, 44, 0.95)' : 'rgba(18, 26, 22, 0.9)',
-              border: viewingPlayerId === aiPlayer.id ? '1.5px solid #d4af37' : '1px solid rgba(212, 175, 55, 0.25)',
+              background: viewingPlayerId === otherPlayer.id ? 'rgba(38, 54, 44, 0.95)' : 'rgba(18, 26, 22, 0.9)',
+              border: viewingPlayerId === otherPlayer.id ? '1.5px solid #d4af37' : '1px solid rgba(212, 175, 55, 0.25)',
               padding: '4px 14px',
               borderRadius: '20px',
               fontSize: '0.75rem',
               cursor: 'pointer',
-              boxShadow: viewingPlayerId === aiPlayer.id ? '0 0 10px rgba(212, 175, 55, 0.3)' : 'none'
+              boxShadow: viewingPlayerId === otherPlayer.id ? '0 0 10px rgba(212, 175, 55, 0.3)' : 'none'
             }}
           >
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: aiPlayer.color }} />
-            <span style={{ fontWeight: 700, color: '#f8fafc' }}>{aiPlayer.name}</span>
-            <span style={{ color: aiPlayer.id === currTurnPlayer?.id ? '#f87171' : '#94a3b8' }}>
-              {aiPlayer.id === currTurnPlayer?.id ? '● 생각 중...' : '대기 중'}
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: otherPlayer.color }} />
+            <span style={{ fontWeight: 700, color: '#f8fafc' }}>{otherPlayer.name}</span>
+            <span style={{ color: otherPlayer.id === currTurnPlayer?.id ? '#f87171' : '#94a3b8' }}>
+              {otherPlayer.id === currTurnPlayer?.id ? '● 행동 중...' : '대기 중'}
             </span>
             <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-            <span style={{ color: '#facc15' }}>🪙 {aiPlayer.silverlings}</span>
-            <span style={{ color: '#60a5fa' }}>👷 {aiPlayer.workers}</span>
-            <span style={{ color: '#4ade80' }}>🏆 {aiPlayer.vp} VP</span>
+            <span style={{ color: '#facc15' }}>🪙 {otherPlayer.silverlings}</span>
+            <span style={{ color: '#60a5fa' }}>👷 {otherPlayer.workers}</span>
+            <span style={{ color: '#4ade80' }}>🏆 {otherPlayer.vp} VP</span>
             <span style={{ fontSize: '0.65rem', color: '#d4af37', marginLeft: '4px' }}>
-              {viewingPlayerId === aiPlayer.id ? '[내 영지 복귀]' : '[영지 보기]'}
+              {viewingPlayerId === otherPlayer.id ? '[내 영지 복귀]' : '[영지 보기]'}
             </span>
           </div>
         )}
@@ -192,6 +253,27 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
         </div>
       </header>
 
+      {/* 온라인 모드: 상대방 턴일 때 안내 배너 */}
+      {playMode === 'online' && !isMyTurn && (
+        <div style={{
+          background: 'rgba(234, 179, 8, 0.15)',
+          border: '1px solid rgba(234, 179, 8, 0.4)',
+          color: '#fef08a',
+          padding: '5px 14px',
+          borderRadius: '8px',
+          fontSize: '0.8rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          marginBottom: '6px',
+          flexShrink: 0
+        }}>
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#eab308', animation: 'pulse 1.5s infinite' }} />
+          <span>상대 플레이어(<strong>{currTurnPlayer?.name}</strong>)의 턴을 기다리고 있습니다...</span>
+        </div>
+      )}
+
       {/* 2. 메인 1화면 2분할 대시보드 (좌 49% : 우 51% 균형 배분으로 3열 디포 완벽 수용) */}
       <main style={{
         display: 'grid',
@@ -199,7 +281,10 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
         gap: '12px',
         flex: 1,
         minHeight: 0,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        pointerEvents: isMyTurn ? 'auto' : 'none',
+        opacity: isMyTurn ? 1 : 0.92,
+        transition: 'opacity 0.2s ease'
       }}>
         
         {/* [좌측 54%] 내 영지 벌집 맵 + 바로 아래 일체형 컨트롤 트레이 */}
