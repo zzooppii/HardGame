@@ -4,6 +4,7 @@ import type { LobbyPlayer } from '../network/peerManager';
 import { usePuertoRicoStore, getSerializableGameState } from '../../games/puerto-rico/store/usePuertoRicoStore';
 import { useBurgundyStore, getSerializableBurgundyState } from '../../games/burgundy/store/useBurgundyStore';
 import { useLeHavreStore, getSerializableLeHavreState } from '../../games/le-havre/store/useLeHavreStore';
+import { useCavernaStore } from '../../games/caverna/store/useCavernaStore';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
 
 interface GameSetupModalProps {
@@ -28,9 +29,11 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
   // 온라인 모드 옵션
   const [onlineSubTab, setOnlineSubTab] = useState<'create' | 'join'>('create');
   const [playerName, setPlayerName] = useState<string>(
-    gameTitle === '르아브르' 
-      ? '노르망디 선주' 
-      : (gameTitle === '버건디의 성' ? '버건디 영주' : '카리브 모험가')
+    gameTitle.includes('카베르나')
+      ? '드워프 족장'
+      : (gameTitle === '르아브르' 
+          ? '노르망디 선주' 
+          : (gameTitle === '버건디의 성' ? '버건디 영주' : '카리브 모험가'))
   );
   const [inputRoomCode, setInputRoomCode] = useState<string>('');
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
@@ -361,7 +364,9 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
 
   // 솔로 / 로컬 시작
   const handleStartSoloOrLocal = () => {
-    if (gameTitle === '르아브르') {
+    if (gameTitle.includes('카베르나')) {
+      useCavernaStore.getState().initGame(playerCount, activeTab === 'solo');
+    } else if (gameTitle === '르아브르') {
       useLeHavreStore.getState().initGame(playerCount, activeTab === 'solo');
     } else if (gameTitle === '버건디의 성') {
       useBurgundyStore.getState().initGame(playerCount, activeTab === 'solo');

@@ -3,6 +3,7 @@ import { Lobby } from './platform/components/Lobby';
 import { PuertoRicoGame } from './games/puerto-rico/PuertoRicoGame';
 import { BurgundyGame } from './games/burgundy/BurgundyGame';
 import { LeHavreGame } from './games/le-havre/LeHavreGame';
+import { CavernaGame } from './games/caverna/CavernaGame';
 import { Dices } from 'lucide-react';
 
 export function App() {
@@ -17,6 +18,9 @@ export function App() {
   }
   if (activeGameId === 'le-havre') {
     return <LeHavreGame onBackToLobby={() => setActiveGameId(null)} />;
+  }
+  if (activeGameId === 'caverna') {
+    return <CavernaGame onBackToLobby={() => setActiveGameId(null)} />;
   }
 
   return (
@@ -62,7 +66,7 @@ export function App() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            <span className="badge badge-gold">1단계 푸에르토리코 • 2단계 버건디 • 3단계 르아브르 완성</span>
+            <span className="badge badge-gold">4대 명작 컬렉션 (푸에르토리코 • 버건디 • 르아브르 • 카베르나) 플레이 가능</span>
           </div>
         </div>
       </header>

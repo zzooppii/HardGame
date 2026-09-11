@@ -61,7 +61,7 @@ export const BOARD_GAMES_LIST: BoardGameMeta[] = [
     category: ['일꾼 놓기', '동굴 발굴', '농경 및 목축', '무기 제작/원정'],
     flavorText: '산속 깊은 동굴에 터전을 잡은 드워프 일족의 번영을 이끄세요.',
     description: '동굴을 파내 방을 만들고 광석과 루비를 채굴하며, 숲을 개간해 밭을 일구고 가축을 번식시키는 농경&동굴 개척 일꾼 놓기 게임의 정점입니다.',
-    status: 'in_development',
+    status: 'available',
     accentColor: '#f97316',
     bannerImage: 'linear-gradient(135deg, #431407 0%, #1c0a00 60%, #f97316 100%)'
   },
