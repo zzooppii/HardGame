@@ -20,23 +20,21 @@ interface DuchyBoardProps {
 export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer }) => {
   const { selectedDieIndex, selectedKeySlotIndex, placeTileFromStorage } = useBurgundyStore();
 
-  // 1화면 무스크롤을 위한 최적화된 육각 그리드 반지름 (R=28)
-  const R = 28;
+  // 큰 화면에서도 꽉 차고 웅장하게 보이도록 육각 크기 및 반응형 정밀 핏
+  const R = 40;
   const width = R * Math.sqrt(3);
-  const centerX = 200;
-  const centerY = 165;
 
   const selectedTile = (isCurrentPlayer && selectedKeySlotIndex !== null) ? player.keySlots[selectedKeySlotIndex] : null;
   const dieValue = (isCurrentPlayer && selectedDieIndex !== null && !player.usedDice[selectedDieIndex]) ? player.dice[selectedDieIndex] : null;
 
   return (
-    <div className="saboteur-board-panel" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+    <div className="saboteur-board-panel" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
       
       {/* 1. 영지 헤더 바 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '8px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ color: '#d4af37', fontSize: '0.8rem' }}>●</span>
-          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
+          <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
             {player.name}의 영지 (DUCHY)
           </span>
           {isCurrentPlayer && (
@@ -60,7 +58,7 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
             border: '1px solid rgba(212, 175, 55, 0.3)', 
             borderRadius: '4px', 
             padding: '2px 8px', 
-            fontSize: '0.72rem', 
+            fontSize: '0.75rem', 
             color: '#facc15',
             fontWeight: 800
           }}>
@@ -69,21 +67,25 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
         </div>
       </div>
 
-      {/* 2. 컴팩트 37칸 육각 벌집 맵 */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2px 0' }}>
-        <svg width="400" height="330" viewBox="0 0 400 330" style={{ maxWidth: '100%', height: 'auto' }}>
+      {/* 2. 대형 반응형 37칸 육각 벌집 맵 (원점 기준 타이트 뷰박스로 패널 공간 100% 최적 활용) */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 0, padding: '4px', width: '100%', height: '100%' }}>
+        <svg 
+          viewBox="-250 -235 500 470" 
+          preserveAspectRatio="xMidYMid meet" 
+          style={{ width: '100%', height: '100%', maxHeight: '100%', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.75))' }}
+        >
           <defs>
             <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#000000" floodOpacity="0.8" />
+              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.85" />
             </filter>
             <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#facc15" floodOpacity="0.85" />
+              <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#facc15" floodOpacity="0.9" />
             </filter>
           </defs>
 
           {player.duchy.map((slot) => {
-            const x = centerX + R * Math.sqrt(3) * (slot.q + slot.r / 2);
-            const y = centerY + R * (3 / 2) * slot.r;
+            const x = R * Math.sqrt(3) * (slot.q + slot.r / 2);
+            const y = R * (3 / 2) * slot.r;
 
             const isOccupied = slot.placedTile !== null;
             const categoryMeta = CATEGORY_COLORS[slot.category];
@@ -136,19 +138,19 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
                       y={y - 2}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize="12"
+                      fontSize="16"
                     >
                       {slot.placedTile?.icon}
                     </text>
                     <text
                       x={x}
-                      y={y + 10}
+                      y={y + 13}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize="7.5"
+                      fontSize="9.5"
                       fontWeight="800"
                       fill="#f8fafc"
-                      letterSpacing="0.2px"
+                      letterSpacing="0.3px"
                     >
                       {slot.placedTile?.name.split(' ')[0]}
                     </text>
@@ -158,18 +160,18 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
                     <circle
                       cx={x}
                       cy={y}
-                      r="8.5"
-                      fill="rgba(0, 0, 0, 0.5)"
+                      r="12.5"
+                      fill="rgba(0, 0, 0, 0.6)"
                       stroke={categoryMeta.border}
-                      strokeWidth="0.8"
-                      opacity="0.6"
+                      strokeWidth="1.2"
+                      opacity="0.9"
                     />
                     <text
                       x={x}
                       y={y + 1}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize="8.5"
+                      fontSize="12"
                       fontWeight="900"
                       fill={categoryMeta.text}
                     >

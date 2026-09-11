@@ -7,6 +7,14 @@ import { Dices } from 'lucide-react';
 export function App() {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
 
+  // 게임 플레이 중에는 플랫폼 헤더/푸터를 숨겨 100vh 완결형 풀스크린 대시보드 제공
+  if (activeGameId === 'puerto-rico') {
+    return <PuertoRicoGame onBackToLobby={() => setActiveGameId(null)} />;
+  }
+  if (activeGameId === 'burgundy') {
+    return <BurgundyGame onBackToLobby={() => setActiveGameId(null)} />;
+  }
+
   return (
     <div className="app-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
@@ -49,31 +57,15 @@ export function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {activeGameId ? (
-            <button 
-              className="btn-secondary" 
-              onClick={() => setActiveGameId(null)}
-              style={{ fontSize: '0.82rem', padding: '6px 14px' }}
-            >
-              로비로 나가기
-            </button>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              <span className="badge badge-gold">1단계 푸에르토리코 완성</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            <span className="badge badge-gold">1단계 푸에르토리코 & 2단계 버건디 완성</span>
+          </div>
         </div>
       </header>
 
-      {/* 화면 라우팅: 로비 vs 개별 게임 */}
+      {/* 화면 라우팅: 로비 */}
       <div style={{ flex: 1 }}>
-        {activeGameId === 'puerto-rico' ? (
-          <PuertoRicoGame onBackToLobby={() => setActiveGameId(null)} />
-        ) : activeGameId === 'burgundy' ? (
-          <BurgundyGame onBackToLobby={() => setActiveGameId(null)} />
-        ) : (
-          <Lobby onSelectGame={(gameId) => setActiveGameId(gameId)} />
-        )}
+        <Lobby onSelectGame={(gameId) => setActiveGameId(gameId)} />
       </div>
 
       {/* 플랫폼 푸터 */}

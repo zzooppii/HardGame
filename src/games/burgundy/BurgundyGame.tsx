@@ -63,11 +63,13 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
       className="theme-burgundy-masterpiece" 
       style={{ 
         height: '100vh', 
+        maxHeight: '100vh',
         overflow: 'hidden', 
         display: 'flex', 
         flexDirection: 'column', 
-        padding: '10px 16px', 
+        padding: '8px 16px', 
         maxWidth: '1680px', 
+        width: '100%',
         margin: '0 auto',
         boxSizing: 'border-box'
       }}
