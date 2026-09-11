@@ -36,28 +36,28 @@ export const CentralDepotBoard: React.FC = () => {
   return (
     <div className="saboteur-board-panel" style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '10px', height: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
       
-      {/* 1. 상단 디포 타이틀 & 스플랜더식 실시간 상태 가이드 바 (컴팩트 1줄 통합) */}
-      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '4px' }}>
+      {/* 1. 상단 디포 타이틀 & 스플랜더식 실시간 상태 가이드 바 (시원한 크기) */}
+      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212, 175, 55, 0.2)', paddingBottom: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: '#d4af37', fontSize: '0.8rem' }}>●</span>
-          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
+          <span style={{ color: '#d4af37', fontSize: '0.9rem' }}>●</span>
+          <span style={{ fontWeight: 800, fontSize: '0.98rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
             공용 주사위 디포 (DEPOTS)
           </span>
         </div>
 
         {/* 상태 가이드 배지 */}
         <div style={{
-          padding: '3px 10px',
-          borderRadius: '12px',
+          padding: '4px 14px',
+          borderRadius: '14px',
           background: guideType === 'action' 
-            ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(180, 83, 9, 0.25) 100%)' 
+            ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(180, 83, 9, 0.3) 100%)' 
             : 'rgba(0, 0, 0, 0.45)',
-          border: guideType === 'action' ? '1px solid #d4af37' : '1px solid rgba(255, 255, 255, 0.1)',
+          border: guideType === 'action' ? '1.5px solid #d4af37' : '1px solid rgba(255, 255, 255, 0.15)',
           color: guideType === 'action' ? '#fde047' : '#cbd5e1',
-          fontSize: '0.72rem',
+          fontSize: '0.8rem',
           fontWeight: 700,
-          boxShadow: guideType === 'action' ? '0 0 10px rgba(212, 175, 55, 0.3)' : 'none',
-          maxWidth: '380px',
+          boxShadow: guideType === 'action' ? '0 0 12px rgba(212, 175, 55, 0.4)' : 'none',
+          maxWidth: '420px',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap'
@@ -66,12 +66,12 @@ export const CentralDepotBoard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 실물 보드게임 트레이 감성의 1~6번 디포 진열대 (단단한 62px 실물 타일 토큰 트레이) */}
+      {/* 2. 실물 보드게임 트레이 감성의 1~6번 디포 진열대 (시원한 85px 대형 타일 토큰 트레이) */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', 
         gridTemplateRows: 'auto auto', 
-        gap: '6px', 
+        gap: '8px', 
         minWidth: 0
       }}>
         {[1, 2, 3, 4, 5, 6].map(depotNum => {
@@ -82,49 +82,49 @@ export const CentralDepotBoard: React.FC = () => {
             <div
               key={depotNum}
               style={{
-                borderRadius: '7px',
-                padding: '5px 6px',
+                borderRadius: '8px',
+                padding: '6px 8px',
                 background: isMatchingDie 
                   ? 'linear-gradient(145deg, rgba(38, 54, 44, 0.95) 0%, rgba(20, 28, 23, 0.95) 100%)' 
-                  : 'rgba(14, 20, 17, 0.8)',
+                  : 'rgba(14, 20, 17, 0.85)',
                 border: isMatchingDie 
-                  ? '1.5px solid #d4af37' 
-                  : '1px solid rgba(212, 175, 55, 0.18)',
+                  ? '2px solid #d4af37' 
+                  : '1px solid rgba(212, 175, 55, 0.22)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px',
+                gap: '5px',
                 minWidth: 0,
                 boxSizing: 'border-box',
                 boxShadow: isMatchingDie 
-                  ? '0 0 14px rgba(212, 175, 55, 0.35), inset 0 1px 1px rgba(255,255,255,0.1)' 
+                  ? '0 0 16px rgba(212, 175, 55, 0.4), inset 0 1px 1px rgba(255,255,255,0.1)' 
                   : 'inset 0 2px 5px rgba(0,0,0,0.5)',
                 transition: 'all 0.2s ease'
               }}
             >
               {/* 디포 헤더 바 (황동 씰 + 라벨 + 상태) */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212,175,55,0.12)', paddingBottom: '2px', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <div className="brass-seal-badge" style={{ width: '20px', height: '20px', fontSize: '0.72rem', flexShrink: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212,175,55,0.15)', paddingBottom: '3px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className="brass-seal-badge" style={{ width: '24px', height: '24px', fontSize: '0.82rem', flexShrink: 0 }}>
                     {depotNum}
                   </div>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isMatchingDie ? '#facc15' : '#e2e8f0' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isMatchingDie ? '#facc15' : '#f1f5f9' }}>
                     {depotNum}번 디포
                   </span>
                 </div>
                 <span style={{ 
-                  fontSize: '0.58rem', 
+                  fontSize: '0.65rem', 
                   color: isMatchingDie ? '#86efac' : '#94a3b8', 
                   fontWeight: isMatchingDie ? 800 : 600,
-                  background: isMatchingDie ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-                  padding: isMatchingDie ? '1px 4px' : '0',
+                  background: isMatchingDie ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+                  padding: isMatchingDie ? '1px 6px' : '0',
                   borderRadius: '3px'
                 }}>
                   {isMatchingDie ? '가져오기 가능' : `${tiles.length}개`}
                 </span>
               </div>
 
-              {/* 좌우 2구 타일 슬롯 트레이 (고정 62px 실물 타일 토큰) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', width: '100%', minWidth: 0 }}>
+              {/* 좌우 2구 타일 슬롯 트레이 (시원한 76px 대형 실물 타일 토큰) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px', width: '100%', minWidth: 0 }}>
                 {[0, 1].map(slotIdx => {
                   const tile = tiles[slotIdx];
 
@@ -133,15 +133,15 @@ export const CentralDepotBoard: React.FC = () => {
                       <div 
                         key={slotIdx}
                         style={{
-                          height: '62px',
-                          borderRadius: '5px',
-                          border: '1px dashed rgba(255, 255, 255, 0.12)',
-                          background: 'rgba(0, 0, 0, 0.25)',
+                          height: '76px',
+                          borderRadius: '6px',
+                          border: '1.5px dashed rgba(255, 255, 255, 0.15)',
+                          background: 'rgba(0, 0, 0, 0.3)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#475569',
-                          fontSize: '0.62rem',
+                          color: '#64748b',
+                          fontSize: '0.7rem',
                           fontWeight: 600
                         }}
                       >
@@ -161,20 +161,20 @@ export const CentralDepotBoard: React.FC = () => {
                       disabled={!isMatchingDie || currPlayer?.isAI}
                       title={`${tile.name}: ${tile.desc}`}
                       style={{
-                        height: '62px',
-                        padding: '4px 5px',
-                        borderRadius: '5px',
-                        background: isMatchingDie ? tile.color : 'rgba(25, 34, 29, 0.92)',
-                        border: isMatchingDie ? '1.5px solid #facc15' : '1px solid rgba(255, 255, 255, 0.1)',
-                        color: isMatchingDie ? '#fff' : '#cbd5e1',
+                        height: '76px',
+                        padding: '4px 6px',
+                        borderRadius: '6px',
+                        background: isMatchingDie ? tile.color : 'rgba(25, 34, 29, 0.95)',
+                        border: isMatchingDie ? '2px solid #facc15' : '1px solid rgba(255, 255, 255, 0.12)',
+                        color: isMatchingDie ? '#fff' : '#f1f5f9',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '2px',
                         cursor: isMatchingDie ? 'pointer' : 'not-allowed',
-                        opacity: isMatchingDie ? 1 : 0.7,
-                        boxShadow: isMatchingDie ? '0 2px 6px rgba(0,0,0,0.6)' : 'none',
+                        opacity: isMatchingDie ? 1 : 0.75,
+                        boxShadow: isMatchingDie ? '0 4px 12px rgba(0,0,0,0.7), 0 0 10px rgba(250, 204, 21, 0.4)' : '0 2px 6px rgba(0,0,0,0.5)',
                         transition: 'all 0.15s ease',
                         width: '100%',
                         minWidth: 0,
@@ -183,11 +183,11 @@ export const CentralDepotBoard: React.FC = () => {
                         textAlign: 'center'
                       }}
                     >
-                      <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>{tile.icon}</span>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', marginTop: '1px' }}>
+                      <span style={{ fontSize: '1.45rem', lineHeight: 1 }}>{tile.icon}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', marginTop: '2px' }}>
                         {tile.name}
                       </span>
-                      <span style={{ fontSize: '0.55rem', color: isMatchingDie ? '#fef08a' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', opacity: 0.85 }}>
+                      <span style={{ fontSize: '0.62rem', color: isMatchingDie ? '#fef08a' : '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', opacity: 0.9 }}>
                         {tile.desc}
                       </span>
                     </button>
@@ -208,26 +208,26 @@ export const CentralDepotBoard: React.FC = () => {
       }}>
         {/* [암시장 (은화 2개 구매)] */}
         <div style={{
-          padding: '6px 8px',
-          borderRadius: '7px',
+          padding: '8px 10px',
+          borderRadius: '8px',
           background: 'linear-gradient(145deg, #18130d 0%, #0d0a07 100%)',
-          border: '1px dashed rgba(212, 175, 55, 0.35)',
+          border: '1.5px dashed rgba(212, 175, 55, 0.4)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '4px'
+          gap: '5px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 800, fontSize: '0.72rem', color: '#facc15' }}>
+            <span style={{ fontWeight: 800, fontSize: '0.78rem', color: '#facc15' }}>
               🪙 암시장 (은화 2개 구매)
             </span>
-            <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
               내 은화: <strong style={{ color: '#facc15' }}>{currPlayer?.silverlings || 0}개</strong>
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
             {blackMarketDepot.length === 0 ? (
-              <div style={{ fontSize: '0.65rem', color: '#64748b', padding: '2px 0' }}>암시장 타일 소진</div>
+              <div style={{ fontSize: '0.7rem', color: '#64748b', padding: '3px 0' }}>암시장 타일 소진</div>
             ) : (
               blackMarketDepot.map(tile => {
                 const canBuy = currPlayer && currPlayer.silverlings >= 2 && !currPlayer.isAI;
@@ -240,20 +240,21 @@ export const CentralDepotBoard: React.FC = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '3px',
-                      padding: '3px 6px',
-                      borderRadius: '4px',
+                      gap: '4px',
+                      padding: '4px 8px',
+                      borderRadius: '5px',
                       background: tile.color,
-                      border: canBuy ? '1px solid #d4af37' : '1px solid rgba(255,255,255,0.1)',
+                      border: canBuy ? '1.5px solid #d4af37' : '1px solid rgba(255,255,255,0.12)',
                       color: '#fff',
                       cursor: canBuy ? 'pointer' : 'not-allowed',
                       opacity: canBuy ? 1 : 0.5,
-                      fontSize: '0.65rem',
-                      fontWeight: 700
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      boxShadow: canBuy ? '0 2px 6px rgba(0,0,0,0.6)' : 'none'
                     }}
                   >
-                    <span>{tile.icon}</span>
-                    <span style={{ maxWidth: '65px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tile.name}</span>
+                    <span style={{ fontSize: '1.05rem' }}>{tile.icon}</span>
+                    <span style={{ maxWidth: '75px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tile.name}</span>
                     <span style={{ color: '#fef08a' }}>(-2)</span>
                   </button>
                 );
@@ -264,24 +265,24 @@ export const CentralDepotBoard: React.FC = () => {
 
         {/* [상품 판매 코너 (창고 상품 매각)] */}
         <div style={{
-          padding: '6px 8px',
-          borderRadius: '7px',
-          background: 'rgba(18, 26, 22, 0.9)',
-          border: '1px solid rgba(212, 175, 55, 0.2)',
+          padding: '8px 10px',
+          borderRadius: '8px',
+          background: 'rgba(18, 26, 22, 0.92)',
+          border: '1px solid rgba(212, 175, 55, 0.25)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '4px'
+          gap: '5px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 800, fontSize: '0.72rem', color: '#93c5fd' }}>
+            <span style={{ fontWeight: 800, fontSize: '0.78rem', color: '#93c5fd' }}>
               📦 상품 판매 (은화 1개 + VP)
             </span>
-            <span style={{ fontSize: '0.62rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
               주사위 일치 시
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', minHeight: '26px' }}>
+          <div style={{ display: 'flex', gap: '5px', alignItems: 'center', minHeight: '28px' }}>
             {currPlayer?.goods && currPlayer.goods.length > 0 ? (
               currPlayer.goods.map(g => {
                 const canSell = activeDie === g.dieNumber;
@@ -298,16 +299,17 @@ export const CentralDepotBoard: React.FC = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '3px 6px',
-                      borderRadius: '4px',
-                      background: canSell ? '#3b82f6' : 'rgba(30, 41, 59, 0.7)',
-                      border: canSell ? '1px solid #93c5fd' : '1px solid rgba(255,255,255,0.1)',
+                      gap: '5px',
+                      padding: '4px 8px',
+                      borderRadius: '5px',
+                      background: canSell ? '#2563eb' : 'rgba(30, 41, 59, 0.75)',
+                      border: canSell ? '1.5px solid #93c5fd' : '1px solid rgba(255,255,255,0.12)',
                       color: '#fff',
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
                       cursor: canSell ? 'pointer' : 'not-allowed',
-                      opacity: canSell ? 1 : 0.6
+                      opacity: canSell ? 1 : 0.65,
+                      boxShadow: canSell ? '0 2px 8px rgba(37, 99, 235, 0.5)' : 'none'
                     }}
                   >
                     <span>📦</span>
@@ -317,7 +319,7 @@ export const CentralDepotBoard: React.FC = () => {
                 );
               })
             ) : (
-              <span style={{ fontSize: '0.65rem', color: '#64748b' }}>보유 상품 없음</span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>보유 상품 없음</span>
             )}
           </div>
         </div>

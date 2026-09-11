@@ -20,8 +20,8 @@ interface DuchyBoardProps {
 export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer }) => {
   const { selectedDieIndex, selectedKeySlotIndex, placeTileFromStorage } = useBurgundyStore();
 
-  // 큰 화면에서도 꽉 차고 웅장하게 보이도록 육각 크기 대폭 확대 (R=45)
-  const R = 45;
+  // 큰 화면과 얕은 화면 모두에서 꽉 차고 시원하게 보이도록 육각 크기 최적화 (R=40)
+  const R = 40;
   const width = R * Math.sqrt(3);
 
   const selectedTile = (isCurrentPlayer && selectedKeySlotIndex !== null) ? player.keySlots[selectedKeySlotIndex] : null;
@@ -112,7 +112,7 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
       {/* 2. 대형 반응형 37칸 육각 벌집 맵 (패널 100% 꽉 채우는 웅장한 크기) */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, padding: '2px 0', width: '100%', height: '100%', overflow: 'hidden' }}>
         <svg 
-          viewBox="-280 -255 560 510" 
+          viewBox="-250 -230 500 460" 
           preserveAspectRatio="xMidYMid meet" 
           style={{ width: '100%', height: '100%', maxHeight: '100%', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.75))' }}
         >
