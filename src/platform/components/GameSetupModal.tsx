@@ -3,7 +3,7 @@ import { peerManager } from '../network/peerManager';
 import type { LobbyPlayer } from '../network/peerManager';
 import { usePuertoRicoStore, getSerializableGameState } from '../../games/puerto-rico/store/usePuertoRicoStore';
 import { useBurgundyStore, getSerializableBurgundyState } from '../../games/burgundy/store/useBurgundyStore';
-import { useLeHavreStore } from '../../games/le-havre/store/useLeHavreStore';
+import { useLeHavreStore, getSerializableLeHavreState } from '../../games/le-havre/store/useLeHavreStore';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
 
 interface GameSetupModalProps {
@@ -59,6 +59,18 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onGameStart = (initialState, myAssignedPlayerId) => {
+      if (gameTitle === '르아브르') {
+        useLeHavreStore.getState().syncRemoteState(initialState);
+        useLeHavreStore.setState({
+          playMode: 'online',
+          myPlayerId: myAssignedPlayerId,
+          isHost: false,
+          roomCode: createdRoomCode || inputRoomCode
+        });
+        onStartGame();
+        return;
+      }
+
       if (gameTitle === '버건디의 성') {
         useBurgundyStore.getState().syncRemoteState(initialState);
         useBurgundyStore.setState({
@@ -100,6 +112,26 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
             payload: { players: updatedLobby, roomCode: createdRoomCode },
             senderId: peerManager.myPeerId || 'host'
           });
+        }
+        return;
+      }
+
+      // 르아브르 게스트 액션 수신 처리
+      if (gameTitle === '르아브르') {
+        const store = useLeHavreStore.getState();
+        const actionFn = (store as any)[actionName];
+        if (typeof actionFn === 'function') {
+          if (actionName === 'takeDockAction') {
+            actionFn(payload.dockId);
+          } else if (actionName === 'enterBuildingAction') {
+            actionFn(payload.buildingId, payload.actionDetail);
+          } else if (actionName === 'buyBuildingWithCash') {
+            actionFn(payload.buildingId);
+          } else if (actionName === 'repayLoanAction') {
+            actionFn();
+          } else {
+            actionFn();
+          }
         }
         return;
       }
@@ -149,6 +181,10 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onStateSync = (syncedState) => {
+      if (gameTitle === '르아브르') {
+        useLeHavreStore.getState().syncRemoteState(syncedState);
+        return;
+      }
       if (gameTitle === '버건디의 성') {
         useBurgundyStore.getState().syncRemoteState(syncedState);
         return;
@@ -166,7 +202,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     setIsConnecting(true);
     setOnlineError(null);
 
-    const gamePrefix = gameTitle === '버건디의 성' ? 'burgundy' : 'pr';
+    const gamePrefix = gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr');
 
     peerManager.createRoom(
       playerName,
@@ -200,7 +236,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     setIsConnecting(true);
     setOnlineError(null);
 
-    const gamePrefix = gameTitle === '버건디의 성' ? 'burgundy' : 'pr';
+    const gamePrefix = gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr');
 
     peerManager.joinRoom(
       inputRoomCode,
@@ -230,6 +266,26 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
         name: p.name,
         peerId: p.peerId
       }));
+
+      if (gameTitle === '르아브르') {
+        useLeHavreStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
+        const pureInitialState = getSerializableLeHavreState(useLeHavreStore.getState());
+
+        peerManager.broadcast({
+          type: 'START_GAME',
+          payload: {
+            initialState: pureInitialState,
+            playerMappings: lobbyPlayers.map(p => ({
+              peerId: p.peerId,
+              assignedPlayerId: p.assignedPlayerId
+            }))
+          },
+          senderId: peerManager.myPeerId || 'host'
+        });
+
+        onStartGame();
+        return;
+      }
 
       if (gameTitle === '버건디의 성') {
         useBurgundyStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);

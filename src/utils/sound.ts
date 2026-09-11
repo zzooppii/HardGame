@@ -325,6 +325,94 @@ class SoundManager {
       osc.stop(startTime + note.d + 0.05);
     });
   }
+
+  /** 11. 항구 증기선/화물선 뱃고동 (Deep Resonant Foghorn) */
+  public playFoghorn() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const freqs = [110, 138.59]; // A2 + C#3 웅장한 단3/장3도 저음 하모니
+
+    freqs.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.linearRampToValueAtTime(freq * 0.98, now + 1.2);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(320 + idx * 60, now);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.16, now + 0.15);
+      gain.gain.setValueAtTime(0.14, now + 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 1.35);
+    });
+  }
+
+  /** 12. 대장간/조선소 쇠망치 타격음 (Crisp Metallic Anvil Strike) */
+  public playAnvilStrike() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const strikeFreqs = [1240, 2480, 4200];
+
+    strikeFreqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = i === 0 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.18 / (i + 1), now + 0.003);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + (0.15 + i * 0.1));
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.35);
+    });
+  }
+
+  /** 13. 부두 화물 하역 및 적재음 (Cargo/Resource Load) */
+  public playCargoLoad() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(260, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.12);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.22, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.22);
+  }
 }
 
 export const soundManager = new SoundManager();

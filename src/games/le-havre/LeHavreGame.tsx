@@ -5,7 +5,8 @@ import { TownBuildingsGrid } from './components/TownBuildingsGrid';
 import { PlayerWarehouseTray } from './components/PlayerWarehouseTray';
 import { BuildingActionModal } from './components/BuildingActionModal';
 import { LeHavreGameOverModal } from './components/LeHavreGameOverModal';
-import { Volume2, VolumeX, HelpCircle, LogOut } from 'lucide-react';
+import { LeHavreRuleGuideModal } from './components/LeHavreRuleGuideModal';
+import { Volume2, VolumeX, HelpCircle, LogOut, Copy, Check, Globe } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import { subscribeFeedback } from '../../utils/feedback';
 
@@ -27,12 +28,16 @@ export const LeHavreGame: React.FC<LeHavreGameProps> = ({ onBackToLobby }) => {
     players,
     currentTurnPlayerIndex,
     logs,
+    playMode,
+    myPlayerId,
+    roomCode,
     initGame
   } = useLeHavreStore();
 
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     if (players.length === 0) {
@@ -67,9 +72,25 @@ export const LeHavreGame: React.FC<LeHavreGameProps> = ({ onBackToLobby }) => {
     if (!muted) soundManager.playCoin();
   };
 
+  const handleCopyInviteLink = () => {
+    if (!roomCode) return;
+    const url = `${window.location.origin}/le-havre?room=${roomCode}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedLink(true);
+      soundManager.playParchment();
+      setTimeout(() => setCopiedLink(false), 2000);
+    });
+  };
+
   const currTurnPlayer = players[currentTurnPlayerIndex];
-  const aiPlayer = players.find(p => p.isAI) || players[1];
-  const isMyTurn = currTurnPlayer && !currTurnPlayer.isAI;
+  const isOnline = playMode === 'online';
+  
+  // 내 턴 여부 계산 (온라인이면 myPlayerId와 비교, 로컬/솔로면 AI가 아닐 때)
+  const isMyTurn = isOnline 
+    ? (currTurnPlayer?.id === myPlayerId)
+    : (currTurnPlayer && !currTurnPlayer.isAI);
+
+  const opponentPlayer = players.find(p => p.id !== (isOnline ? myPlayerId : 'p-0')) || players[1];
 
   return (
     <div 
@@ -123,10 +144,46 @@ export const LeHavreGame: React.FC<LeHavreGameProps> = ({ onBackToLobby }) => {
             <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>/ 7</span>
             <span style={{ fontSize: '0.68rem', color: '#64748b', marginLeft: '4px' }}>(보급 단계: {turnInRound + 1}/7)</span>
           </div>
+
+          {/* 온라인 방 코드 뱃지 및 초대 링크 복사 */}
+          {isOnline && roomCode && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              fontSize: '0.72rem'
+            }}>
+              <Globe size={12} color="#34d399" />
+              <span style={{ color: '#34d399', fontWeight: 700 }}>방 코드: {roomCode}</span>
+              <button
+                onClick={handleCopyInviteLink}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  color: copiedLink ? '#4ade80' : '#94a3b8',
+                  fontSize: '0.68rem',
+                  padding: '2px 4px',
+                  borderRadius: '4px'
+                }}
+                title="초대 링크 복사"
+              >
+                {copiedLink ? <Check size={11} /> : <Copy size={11} />}
+                <span>{copiedLink ? '복사됨!' : '초대'}</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* 중앙: 상대방(AI) 실시간 현황 캡슐 */}
-        {aiPlayer && (
+        {/* 중앙: 상대방 실시간 현황 캡슐 */}
+        {opponentPlayer && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -137,15 +194,15 @@ export const LeHavreGame: React.FC<LeHavreGameProps> = ({ onBackToLobby }) => {
             borderRadius: '20px',
             fontSize: '0.75rem'
           }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: aiPlayer.color }} />
-            <span style={{ fontWeight: 700, color: '#f8fafc' }}>{aiPlayer.name}</span>
-            <span style={{ color: aiPlayer.id === currTurnPlayer?.id ? '#f87171' : '#94a3b8' }}>
-              {aiPlayer.id === currTurnPlayer?.id ? '● 행동 중...' : '대기 중'}
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: opponentPlayer.color }} />
+            <span style={{ fontWeight: 700, color: '#f8fafc' }}>{opponentPlayer.name}</span>
+            <span style={{ color: opponentPlayer.id === currTurnPlayer?.id ? '#34d399' : '#94a3b8' }}>
+              {opponentPlayer.id === currTurnPlayer?.id ? '● 행동 중...' : '대기 중'}
             </span>
             <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-            <span style={{ color: '#facc15' }}>🪙 {aiPlayer.francs} F</span>
-            <span style={{ color: '#38bdf8' }}>🚢 선박 {aiPlayer.shipsOwned.length}척</span>
-            <span style={{ color: '#4ade80' }}>🏛️ 건물 {aiPlayer.buildingsOwned.length}채</span>
+            <span style={{ color: '#facc15' }}>🪙 {opponentPlayer.francs} F</span>
+            <span style={{ color: '#38bdf8' }}>🚢 선박 {opponentPlayer.shipsOwned.length}척</span>
+            <span style={{ color: '#4ade80' }}>🏛️ 건물 {opponentPlayer.buildingsOwned.length}채</span>
           </div>
         )}
 
@@ -296,59 +353,7 @@ export const LeHavreGame: React.FC<LeHavreGameProps> = ({ onBackToLobby }) => {
       {/* 모달 컴포넌트들 */}
       <BuildingActionModal />
       <LeHavreGameOverModal onReturnToLobby={onBackToLobby} />
-
-      {/* 규칙 모달 */}
-      {showRulesModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(5, 8, 15, 0.85)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 300,
-          padding: '20px'
-        }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', padding: '24px', background: '#091524', border: '1.5px solid #38bdf8' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 className="font-serif text-gold-gradient" style={{ margin: 0, fontSize: '1.3rem' }}>
-                르아브르 (Le Havre) 게임 가이드
-              </h3>
-              <button className="btn-secondary" onClick={() => setShowRulesModal(false)}>닫기</button>
-            </div>
-            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px', lineHeight: 1.45 }}>
-              <div>
-                <strong style={{ color: '#38bdf8' }}>1. 턴 액션 (둘 중 하나 택일)</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  ① 도크의 상품 전량 가져오기, 또는 ② 비어 있는 건물로 일꾼을 이동하여 고유 가공/건설 기능 실행.
-                </p>
-              </div>
-              <div>
-                <strong style={{ color: '#38bdf8' }}>2. 원자재와 가공품</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  어획➔훈제어(2식량), 곡물➔빵(2식량), 가축➔고기(3식량)+원피, 목재➔숯(3연료), 점토➔벽돌, 철➔강철(8VP).
-                </p>
-              </div>
-              <div>
-                <strong style={{ color: '#38bdf8' }}>3. 선박 건조와 식량 절감</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  부두(Wharf)에서 선박(목선, 철선, 강철선)을 건조하면 매 라운드 종료 시 영구적으로 식량 요구치가 차감됩니다.
-                </p>
-              </div>
-              <div>
-                <strong style={{ color: '#38bdf8' }}>4. 밥 먹이기와 대출</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  라운드 종료 시 요구 식량이 부족하면 4프랑 긴급 대출이 강제 발행됩니다 (미상환 시 최종 -7점).
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <LeHavreRuleGuideModal isOpen={showRulesModal} onClose={() => setShowRulesModal(false)} />
 
       {/* 플로팅 피드백 */}
       {feedbacks.map((f) => (
