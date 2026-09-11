@@ -67,7 +67,7 @@ export const Lobby: React.FC<LobbyProps> = ({
           Euro Masterpieces
         </h1>
         <p style={{ maxWidth: '680px', margin: '0 auto 20px auto', fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          보드게임 긱(BGG) 역사상 가장 위대한 6대 전략 보드게임을 웹 브라우저에서 직접 경험하세요.
+          보드게임 긱(BGG) 역사상 가장 위대한 7대 명작 전략 보드게임을 웹 브라우저에서 직접 경험하세요.
           치밀한 경제 엔진과 직관적인 인터페이스로 설계되었습니다.
         </p>
 
@@ -398,15 +398,17 @@ export const Lobby: React.FC<LobbyProps> = ({
           onClose={() => setSetupModalOpen(false)}
           onStartGame={() => {
             setSetupModalOpen(false);
-            const gameId = (targetGameTitle.includes('테라포밍'))
-              ? 'terraforming-mars'
-              : (targetGameTitle.includes('아르낙'))
-                ? 'arnak'
-                : (targetGameTitle.includes('카베르나')
-                    ? 'caverna'
-                    : (targetGameTitle === '르아브르' 
-                        ? 'le-havre' 
-                        : (targetGameTitle === '버건디의 성' ? 'burgundy' : 'puerto-rico')));
+            const gameId = (targetGameTitle.includes('세븐 원더스') || targetGameTitle.includes('7 Wonders'))
+              ? 'seven-wonders-duel'
+              : (targetGameTitle.includes('테라포밍'))
+                ? 'terraforming-mars'
+                : (targetGameTitle.includes('아르낙'))
+                  ? 'arnak'
+                  : (targetGameTitle.includes('카베르나')
+                      ? 'caverna'
+                      : (targetGameTitle === '르아브르' 
+                          ? 'le-havre' 
+                          : (targetGameTitle === '버건디의 성' ? 'burgundy' : 'puerto-rico')));
             onSelectGame(gameId);
           }}
         />

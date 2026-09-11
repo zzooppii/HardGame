@@ -6,6 +6,7 @@ import { LeHavreGame } from './games/le-havre/LeHavreGame';
 import { CavernaGame } from './games/caverna/CavernaGame';
 import { ArnakGame } from './games/arnak/ArnakGame';
 import { TerraformingMarsGame } from './games/terraforming-mars/TerraformingMarsGame';
+import { SevenWondersDuelGame } from './games/seven-wonders-duel/SevenWondersDuelGame';
 import { StatsModal } from './platform/components/StatsModal';
 import { AchievementsModal } from './platform/components/AchievementsModal';
 import { AchievementToast } from './platform/components/AchievementToast';
@@ -61,6 +62,14 @@ export function App() {
     return (
       <>
         <TerraformingMarsGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </>
+    );
+  }
+  if (activeGameId === 'seven-wonders-duel') {
+    return (
+      <>
+        <SevenWondersDuelGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
       </>
     );
@@ -143,7 +152,7 @@ export function App() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
             <span className="badge badge-gold" style={{ border: '1px solid var(--gold-secondary)' }}>
-              🏆 6대 마스터피스 완결
+              🏆 7대 마스터피스 완결
             </span>
           </div>
         </div>
@@ -153,7 +162,7 @@ export function App() {
       <div style={{ flex: 1 }}>
         <Lobby 
           onSelectGame={(gameId) => setActiveGameId(gameId)}
-          onOpenStats={() => setStatsModalOpen(true)}
+          onOpenStats={() => setStatsModalOpen(false)}
           onOpenAchievements={() => setAchievementsModalOpen(true)}
         />
       </div>
@@ -183,7 +192,7 @@ export function App() {
           <span>Designed with Precision</span>
         </div>
         <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-          1단계: 푸에르토리코 | 2단계: 버건디의 성 | 3단계: 르아브르 | 4단계: 카베르나 | 5단계: 아르낙 | 6단계: 테라포밍 마스
+          1단계: 푸에르토리코 | 2단계: 버건디의 성 | 3단계: 르아브르 | 4단계: 카베르나 | 5단계: 아르낙 | 6단계: 테라포밍 마스 | 7단계: 세븐 원더스 듀얼
         </div>
       </footer>
 

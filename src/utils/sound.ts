@@ -548,6 +548,21 @@ class SoundManager {
     osc.start(now);
     osc.stop(now + 0.38);
   }
+
+  /** 19. 카드 배치 및 획득 바스락 소리 */
+  public playCardPlace() {
+    this.playParchment();
+  }
+
+  /** 20. 조작 불가/에러 경고음 */
+  public playError() {
+    this.playClick();
+  }
+
+  /** 21. 군사 충돌/칼날 교차음 */
+  public playCombatSword() {
+    this.playAnvilStrike();
+  }
 }
 
 export const soundManager = new SoundManager();

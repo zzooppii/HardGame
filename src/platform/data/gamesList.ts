@@ -96,5 +96,21 @@ export const BOARD_GAMES_LIST: BoardGameMeta[] = [
     status: 'available',
     accentColor: '#ef4444',
     bannerImage: 'linear-gradient(135deg, #450a0a 0%, #1a0303 60%, #ef4444 100%)'
+  },
+  {
+    id: 'seven-wonders-duel',
+    title: '세븐 원더스 듀얼',
+    originalTitle: '7 Wonders Duel (Base & Pantheon)',
+    designer: 'Antoine Bauza, Bruno Cathala',
+    year: 2015,
+    players: '2인 전용 (솔로 AI / 2인 대결)',
+    playTime: '30분',
+    weight: 2.23,
+    category: ['카드 드래프트', '2인 전용', '군사/과학 즉시 승리', '불가사의 건설', '판테온 확장'],
+    flavorText: '고대 세계의 두 대제국이 맞붙는 역사상 최고의 2인 전략 카드 게임.',
+    description: '피라미드 형태로 배치된 카드를 번갈아 가져오며 문명을 발전시킵니다. 군사 트랙 점령이나 6종 과학 기호 완성 시 즉시 승리하며, 신들의 가호를 받는 판테온 확장팩을 완벽 지원합니다.',
+    status: 'available',
+    accentColor: '#eab308',
+    bannerImage: 'linear-gradient(135deg, #422006 0%, #1f1203 60%, #eab308 100%)'
   }
 ];

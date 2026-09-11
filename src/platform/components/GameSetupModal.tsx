@@ -7,6 +7,8 @@ import { useLeHavreStore, getSerializableLeHavreState } from '../../games/le-hav
 import { useCavernaStore, getSerializableCavernaState } from '../../games/caverna/store/useCavernaStore';
 import { useArnakStore, getSerializableArnakState } from '../../games/arnak/store/useArnakStore';
 import { useTMStore, getSerializableTMState } from '../../games/terraforming-mars/store/useTMStore';
+import { useDuelStore, getSerializableDuelState } from '../../games/seven-wonders-duel/store/useDuelStore';
+import type { DuelExpansionMode } from '../../games/seven-wonders-duel/types';
 import type { AIDifficulty } from '../types';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2, ShieldCheck, Zap, Flame } from 'lucide-react';
 
@@ -24,24 +26,29 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
   const { initGame, initOnlineGame, syncRemoteState } = usePuertoRicoStore();
   const [activeTab, setActiveTab] = useState<'solo' | 'local' | 'online'>('solo');
 
+  const isDuel = gameTitle.includes('세븐 원더스') || gameTitle.includes('7 Wonders');
+  const [duelExpansion, setDuelExpansion] = useState<DuelExpansionMode>('base');
+
   // 솔로 / 로컬 모드 옵션
   const [playerCount, setPlayerCount] = useState<number>(
-    gameTitle === '버건디의 성' || gameTitle === '르아브르' ? 2 : 3
+    isDuel || gameTitle === '버건디의 성' || gameTitle === '르아브르' ? 2 : 3
   );
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('easy');
 
   // 온라인 모드 옵션
   const [onlineSubTab, setOnlineSubTab] = useState<'create' | 'join'>('create');
   const [playerName, setPlayerName] = useState<string>(
-    gameTitle.includes('테라포밍')
-      ? '화성 개척 총수'
-      : (gameTitle.includes('아르낙')
-          ? '아르낙 탐험대장'
-          : (gameTitle.includes('카베르나')
-              ? '드워프 족장'
-              : (gameTitle === '르아브르' 
-                  ? '노르망디 선주' 
-                  : (gameTitle === '버건디의 성' ? '버건디 영주' : '카리브 모험가'))))
+    isDuel
+      ? '알렉산드리아 총독'
+      : (gameTitle.includes('테라포밍')
+          ? '화성 개척 총수'
+          : (gameTitle.includes('아르낙')
+              ? '아르낙 탐험대장'
+              : (gameTitle.includes('카베르나')
+                  ? '드워프 족장'
+                  : (gameTitle === '르아브르' 
+                      ? '노르망디 선주' 
+                      : (gameTitle === '버건디의 성' ? '버건디 영주' : '카리브 모험가')))))
   );
   const [inputRoomCode, setInputRoomCode] = useState<string>('');
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
@@ -70,6 +77,18 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onGameStart = (initialState, myAssignedPlayerId) => {
+      if (isDuel) {
+        useDuelStore.getState().syncRemoteState(initialState);
+        useDuelStore.setState({
+          playMode: 'online',
+          myPlayerId: myAssignedPlayerId,
+          isHost: false,
+          roomCode: createdRoomCode || inputRoomCode
+        });
+        onStartGame();
+        return;
+      }
+
       if (gameTitle.includes('테라포밍')) {
         useTMStore.getState().syncRemoteState(initialState);
         useTMStore.setState({
@@ -159,6 +178,23 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
             payload: { players: updatedLobby, roomCode: createdRoomCode },
             senderId: peerManager.myPeerId || 'host'
           });
+        }
+        return;
+      }
+
+      // 세븐 원더스 듀얼 게스트 액션 수신 처리
+      if (isDuel) {
+        const store = useDuelStore.getState();
+        if (actionName === 'DUEL_BUILD_CARD') {
+          store.buildCardAction(payload.cardId);
+        } else if (actionName === 'DUEL_DISCARD_CARD') {
+          store.discardCardAction(payload.cardId);
+        } else if (actionName === 'DUEL_BUILD_WONDER') {
+          store.buildWonderAction(payload.wonderId, payload.cardId);
+        } else if (actionName === 'DUEL_DRAFT_WONDER') {
+          store.pickWonderInDraft(payload.wonderId);
+        } else if (actionName === 'DUEL_ACTIVATE_GOD') {
+          store.activateGodAction(payload.godId);
         }
         return;
       }
@@ -275,6 +311,10 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     };
 
     peerManager.onStateSync = (syncedState) => {
+      if (isDuel) {
+        useDuelStore.getState().syncRemoteState(syncedState);
+        return;
+      }
       if (gameTitle.includes('테라포밍')) {
         useTMStore.getState().syncRemoteState(syncedState);
         return;
@@ -308,7 +348,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     setIsConnecting(true);
     setOnlineError(null);
 
-    const gamePrefix = gameTitle.includes('아르낙') ? 'arnak' : (gameTitle === '카베르나' ? 'caverna' : (gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr')));
+    const gamePrefix = isDuel ? 'duel' : (gameTitle.includes('테라포밍') ? 'tm' : (gameTitle.includes('아르낙') ? 'arnak' : (gameTitle === '카베르나' ? 'caverna' : (gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr')))));
 
     peerManager.createRoom(
       playerName,
@@ -342,7 +382,7 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
     setIsConnecting(true);
     setOnlineError(null);
 
-    const gamePrefix = gameTitle.includes('아르낙') ? 'arnak' : (gameTitle === '카베르나' ? 'caverna' : (gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr')));
+    const gamePrefix = isDuel ? 'duel' : (gameTitle.includes('테라포밍') ? 'tm' : (gameTitle.includes('아르낙') ? 'arnak' : (gameTitle === '카베르나' ? 'caverna' : (gameTitle === '르아브르' ? 'lehavre' : (gameTitle === '버건디의 성' ? 'burgundy' : 'pr')))));
 
     peerManager.joinRoom(
       inputRoomCode,
@@ -372,6 +412,26 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
         name: p.name,
         peerId: p.peerId
       }));
+
+      if (isDuel) {
+        useDuelStore.getState().initOnlineGame(duelExpansion, humanPlayers, roomCode, 'p-0', true);
+        const pureInitialState = getSerializableDuelState(useDuelStore.getState());
+
+        peerManager.broadcast({
+          type: 'START_GAME',
+          payload: {
+            initialState: pureInitialState,
+            playerMappings: lobbyPlayers.map(p => ({
+              peerId: p.peerId,
+              assignedPlayerId: p.assignedPlayerId
+            }))
+          },
+          senderId: peerManager.myPeerId || 'host'
+        });
+
+        onStartGame();
+        return;
+      }
 
       if (gameTitle.includes('테라포밍')) {
         useTMStore.getState().initOnlineGame(playerCount, humanPlayers, roomCode, 'p-0', true);
@@ -527,6 +587,11 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
 
   // 솔로 / 로컬 시작
   const handleStartSoloOrLocal = () => {
+    if (isDuel) {
+      useDuelStore.getState().initGame(activeTab === 'solo', duelExpansion, aiDifficulty);
+      onStartGame();
+      return;
+    }
     if (gameTitle.includes('테라포밍')) {
       useTMStore.getState().initGame(playerCount, activeTab === 'solo', aiDifficulty);
     } else if (gameTitle.includes('아르낙')) {
@@ -652,31 +717,97 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
             {/* 1) 솔로 또는 로컬 탭 내용 */}
             {(activeTab === 'solo' || activeTab === 'local') && (
               <div>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                    플레이 인원 수 선택
-                  </label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    {[2, 3, 4].map(count => (
+                {isDuel ? (
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        게임 확장 모드 선택
+                      </label>
+                      <span style={{ fontSize: '0.72rem', color: '#fbbf24', fontWeight: 600 }}>
+                        👥 2인 전용 결투
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                       <button
-                        key={count}
-                        onClick={() => setPlayerCount(count)}
+                        type="button"
+                        onClick={() => setDuelExpansion('base')}
                         style={{
-                          flex: 1,
-                          padding: '10px',
-                          borderRadius: '8px',
-                          background: playerCount === count ? 'var(--gold-primary)' : 'rgba(255, 255, 255, 0.05)',
-                          color: playerCount === count ? '#1a1003' : '#f8fafc',
-                          border: playerCount === count ? '1px solid var(--gold-secondary)' : '1px solid var(--border-subtle)',
-                          fontWeight: 700,
-                          cursor: 'pointer'
+                          padding: '14px',
+                          borderRadius: '12px',
+                          border: duelExpansion === 'base' ? '2px solid #eab308' : '1px solid rgba(255, 255, 255, 0.1)',
+                          background: duelExpansion === 'base' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                          color: duelExpansion === 'base' ? '#fef08a' : '#94a3b8',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          transition: 'all 0.2s'
                         }}
                       >
-                        {count}인 플레이
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '800' }}>
+                          <span>🏛️</span>
+                          <span>일반판 (Base Game)</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: duelExpansion === 'base' ? '#cbd5e1' : '#64748b', lineHeight: 1.4 }}>
+                          카드 피라미드 드래프트, 불가사의 건설, 군사·과학 즉시 승리의 원작 정통 룰.
+                        </div>
                       </button>
-                    ))}
+
+                      <button
+                        type="button"
+                        onClick={() => setDuelExpansion('pantheon')}
+                        style={{
+                          padding: '14px',
+                          borderRadius: '12px',
+                          border: duelExpansion === 'pantheon' ? '2px solid #c084fc' : '1px solid rgba(255, 255, 255, 0.1)',
+                          background: duelExpansion === 'pantheon' ? 'rgba(168, 85, 247, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                          color: duelExpansion === 'pantheon' ? '#f3e8ff' : '#94a3b8',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '800', color: duelExpansion === 'pantheon' ? '#e9d5ff' : '#cbd5e1' }}>
+                          <span>⚡</span>
+                          <span>판테온 확장판 (Pantheon)</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: duelExpansion === 'pantheon' ? '#cbd5e1' : '#64748b', lineHeight: 1.4 }}>
+                          신들의 제단 보드, 5대 고대 신화의 15위 신 카드, 신전 카드가 추가되는 전략 확장팩.
+                        </div>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                      플레이 인원 수 선택
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      {[2, 3, 4].map(count => (
+                        <button
+                          key={count}
+                          onClick={() => setPlayerCount(count)}
+                          style={{
+                            flex: 1,
+                            padding: '10px',
+                            borderRadius: '8px',
+                            background: playerCount === count ? 'var(--gold-primary)' : 'rgba(255, 255, 255, 0.05)',
+                            color: playerCount === count ? '#1a1003' : '#f8fafc',
+                            border: playerCount === count ? '1px solid var(--gold-secondary)' : '1px solid var(--border-subtle)',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {count}인 플레이
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* 솔로 모드 전용: AI 난이도 선택 */}
                 {activeTab === 'solo' && (

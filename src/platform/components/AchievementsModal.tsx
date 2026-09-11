@@ -19,7 +19,8 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({ onClose })
     { id: 'le-havre', label: '르아브르' },
     { id: 'caverna', label: '카베르나' },
     { id: 'arnak', label: '아르낙' },
-    { id: 'terraforming-mars', label: '테라포밍 마스' }
+    { id: 'terraforming-mars', label: '테라포밍 마스' },
+    { id: 'seven-wonders-duel', label: '세븐 원더스 듀얼' }
   ];
 
   const totalCount = achievements.length;

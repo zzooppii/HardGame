@@ -47,7 +47,8 @@ export type AchievementCategory =
   | 'le-havre' 
   | 'caverna' 
   | 'arnak' 
-  | 'terraforming-mars';
+  | 'terraforming-mars'
+  | 'seven-wonders-duel';
 
 export interface Achievement {
   id: string;
