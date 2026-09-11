@@ -192,10 +192,10 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
         </div>
       </header>
 
-      {/* 2. 메인 1화면 2분할 대시보드 (좌 54% : 우 46%) */}
+      {/* 2. 메인 1화면 2분할 대시보드 (좌 49% : 우 51% 균형 배분으로 3열 디포 완벽 수용) */}
       <main style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(500px, 1.15fr) minmax(420px, 1fr)',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.08fr)',
         gap: '12px',
         flex: 1,
         minHeight: 0,
