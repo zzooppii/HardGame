@@ -21,27 +21,27 @@ export const PlayerBottomTray: React.FC = () => {
   const activeDie = (selectedDieIndex !== null && !currPlayer.usedDice[selectedDieIndex]) ? currPlayer.dice[selectedDieIndex] : null;
 
   return (
-    <div className="saboteur-bottom-tray" style={{ marginTop: '16px', borderRadius: '12px' }}>
-      {/* 1. 상단 라벨 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#f8fafc', letterSpacing: '0.3px' }}>
-            내 주사위 및 보관소 트레이
+    <div className="saboteur-bottom-tray" style={{ borderRadius: '10px', padding: '10px 14px' }}>
+      
+      {/* 1. 상단 라벨 & 실시간 자원 현황 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#f8fafc' }}>
+            내 컨트롤 허브 (DICE & STORAGE)
           </span>
-          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-            나만 조작할 수 있습니다
+          <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+            나만 조작 가능
           </span>
         </div>
 
-        {/* 내 실시간 자원 현황 뱃지 */}
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ 
             background: 'rgba(212, 175, 55, 0.15)', 
             color: '#facc15', 
             border: '1px solid rgba(212, 175, 55, 0.3)', 
-            padding: '2px 8px', 
+            padding: '1px 6px', 
             borderRadius: '4px', 
-            fontSize: '0.75rem',
+            fontSize: '0.72rem',
             fontWeight: 700 
           }}>
             🪙 은화 {currPlayer.silverlings}개
@@ -50,9 +50,9 @@ export const PlayerBottomTray: React.FC = () => {
             background: 'rgba(59, 130, 246, 0.15)', 
             color: '#60a5fa', 
             border: '1px solid rgba(59, 130, 246, 0.3)', 
-            padding: '2px 8px', 
+            padding: '1px 6px', 
             borderRadius: '4px', 
-            fontSize: '0.75rem',
+            fontSize: '0.72rem',
             fontWeight: 700 
           }}>
             👷 일꾼 {currPlayer.workers}개
@@ -61,9 +61,9 @@ export const PlayerBottomTray: React.FC = () => {
             background: 'rgba(34, 197, 94, 0.15)', 
             color: '#4ade80', 
             border: '1px solid rgba(34, 197, 94, 0.3)', 
-            padding: '2px 8px', 
+            padding: '1px 6px', 
             borderRadius: '4px', 
-            fontSize: '0.75rem',
+            fontSize: '0.72rem',
             fontWeight: 700 
           }}>
             🏆 {currPlayer.vp} VP
@@ -72,11 +72,11 @@ export const PlayerBottomTray: React.FC = () => {
       </div>
 
       {/* 2. 주사위 & 보관소 & 상품 & 버튼 메인 트레이 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
         
-        {/* [A] 3D 주사위 2개 조작부 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(0,0,0,0.3)', padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#d4af37' }}>
+        {/* [A] 3D 주사위 2개 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d4af37' }}>
             주사위:
           </span>
 
@@ -86,26 +86,26 @@ export const PlayerBottomTray: React.FC = () => {
             const isSelected = selectedDieIndex === dIdx && !isUsed;
 
             return (
-              <div key={dIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div key={dIdx} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <div
                   className={`die-cube-3d ${isSelected ? 'selected' : ''} ${isUsed ? 'used' : ''}`}
                   onClick={() => !isUsed && !currPlayer.isAI && selectDie(dIdx as 0 | 1)}
-                  title={isUsed ? '이미 사용한 주사위입니다.' : `주사위 [${dieVal}] 선택`}
+                  style={{ width: '38px', height: '38px', fontSize: '1.2rem' }}
+                  title={isUsed ? '사용한 주사위' : `주사위 [${dieVal}] 선택`}
                 >
                   {dieVal}
                 </div>
 
-                {/* 일꾼 보정 컨트롤 */}
                 {!isUsed && !currPlayer.isAI && isSelected && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <button
                       onClick={() => adjustDieWithWorker(dIdx as 0 | 1, 1)}
                       disabled={currPlayer.workers <= 0}
                       title="일꾼 1개 소모하여 눈금 +1"
                       style={{
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '0.68rem',
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        fontSize: '0.62rem',
                         fontWeight: 900,
                         background: currPlayer.workers > 0 ? '#3b82f6' : '#475569',
                         color: '#fff',
@@ -120,9 +120,9 @@ export const PlayerBottomTray: React.FC = () => {
                       disabled={currPlayer.workers <= 0}
                       title="일꾼 1개 소모하여 눈금 -1"
                       style={{
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '0.68rem',
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        fontSize: '0.62rem',
                         fontWeight: 900,
                         background: currPlayer.workers > 0 ? '#3b82f6' : '#475569',
                         color: '#fff',
@@ -139,13 +139,13 @@ export const PlayerBottomTray: React.FC = () => {
           })}
         </div>
 
-        {/* [B] 타일 보관소 (사보타지 손패 카드 슬롯 감성) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#d4af37' }}>
+        {/* [B] 타일 보관소 (3칸) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d4af37' }}>
             보관소:
           </span>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             {currPlayer.keySlots.map((tile, sIdx) => {
               const isSelected = selectedKeySlotIndex === sIdx && tile !== null;
 
@@ -158,12 +158,10 @@ export const PlayerBottomTray: React.FC = () => {
                     }
                   }}
                   style={{
-                    width: '90px',
-                    height: '66px',
-                    borderRadius: '8px',
-                    background: tile 
-                      ? tile.color 
-                      : 'rgba(10, 15, 13, 0.7)',
+                    width: '80px',
+                    height: '54px',
+                    borderRadius: '6px',
+                    background: tile ? tile.color : 'rgba(10, 15, 13, 0.7)',
                     border: isSelected 
                       ? '2px solid #fbbf24' 
                       : (tile ? '1px solid rgba(255,255,255,0.3)' : '1px dashed rgba(212, 175, 55, 0.25)'),
@@ -171,25 +169,25 @@ export const PlayerBottomTray: React.FC = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '4px',
+                    padding: '3px',
                     color: tile ? '#fff' : '#64748b',
                     cursor: tile && !currPlayer.isAI ? 'pointer' : 'default',
                     boxShadow: isSelected 
-                      ? '0 0 16px rgba(250, 204, 21, 0.6), 0 4px 10px rgba(0,0,0,0.5)' 
-                      : (tile ? '0 4px 10px rgba(0,0,0,0.5)' : 'inset 0 2px 5px rgba(0,0,0,0.6)'),
-                    transform: isSelected ? 'translateY(-4px)' : 'none',
+                      ? '0 0 14px rgba(250, 204, 21, 0.6), 0 3px 8px rgba(0,0,0,0.5)' 
+                      : (tile ? '0 3px 8px rgba(0,0,0,0.5)' : 'inset 0 2px 4px rgba(0,0,0,0.6)'),
+                    transform: isSelected ? 'translateY(-3px)' : 'none',
                     transition: 'all 0.15s ease'
                   }}
                 >
                   {tile ? (
                     <>
-                      <span style={{ fontSize: '1.25rem' }}>{tile.icon}</span>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '82px', marginTop: '2px' }}>
+                      <span style={{ fontSize: '1.1rem' }}>{tile.icon}</span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '72px' }}>
                         {tile.name}
                       </span>
                     </>
                   ) : (
-                    <span style={{ fontSize: '0.68rem', opacity: 0.5 }}>빈 슬롯</span>
+                    <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>빈 슬롯</span>
                   )}
                 </div>
               );
@@ -197,15 +195,15 @@ export const PlayerBottomTray: React.FC = () => {
           </div>
         </div>
 
-        {/* [C] 보유 상품 슬롯 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#d4af37' }}>
+        {/* [C] 상품 슬롯 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d4af37' }}>
             상품:
           </span>
 
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '4px' }}>
             {currPlayer.goods.length === 0 ? (
-              <span style={{ fontSize: '0.72rem', color: '#64748b' }}>없음</span>
+              <span style={{ fontSize: '0.68rem', color: '#64748b' }}>없음</span>
             ) : (
               currPlayer.goods.map(g => {
                 const canSell = activeDie === g.dieNumber && !currPlayer.isAI;
@@ -219,22 +217,21 @@ export const PlayerBottomTray: React.FC = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '5px',
-                      padding: '5px 8px',
-                      borderRadius: '6px',
+                      gap: '4px',
+                      padding: '4px 6px',
+                      borderRadius: '5px',
                       background: g.color,
                       color: '#fff',
                       border: canSell ? '1.5px solid #fff' : '1px solid rgba(255,255,255,0.2)',
                       cursor: canSell ? 'pointer' : 'default',
                       opacity: canSell ? 1 : 0.5,
-                      boxShadow: canSell ? '0 0 10px rgba(255,255,255,0.4)' : 'none'
+                      boxShadow: canSell ? '0 0 8px rgba(255,255,255,0.4)' : 'none'
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: '0.75rem', background: 'rgba(0,0,0,0.35)', padding: '1px 4px', borderRadius: '3px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.7rem', background: 'rgba(0,0,0,0.35)', padding: '1px 3px', borderRadius: '3px' }}>
                       {g.dieNumber}
                     </span>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>{g.name}</span>
-                    {canSell && <span style={{ fontSize: '0.68rem', color: '#fef08a' }}>[매각]</span>}
+                    <span style={{ fontSize: '0.68rem', fontWeight: 600 }}>{g.name}</span>
                   </button>
                 );
               })
@@ -242,23 +239,22 @@ export const PlayerBottomTray: React.FC = () => {
           </div>
         </div>
 
-        {/* [D] 일꾼 2개 영입 버튼 (사보타지 우측 하단 액션 버튼 스타일) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            className="btn-gold"
-            onClick={() => takeWorkersAction()}
-            disabled={selectedDieIndex === null || currPlayer.usedDice[selectedDieIndex] || currPlayer.isAI}
-            style={{
-              padding: '10px 16px',
-              fontSize: '0.82rem',
-              borderRadius: '6px',
-              fontWeight: 800
-            }}
-            title="선택한 주사위 1개로 일꾼 토큰 2개 획득"
-          >
-            <Users size={15} /> 일꾼 +2 영입
-          </button>
-        </div>
+        {/* [D] 일꾼 2개 영입 버튼 */}
+        <button
+          className="btn-gold"
+          onClick={() => takeWorkersAction()}
+          disabled={selectedDieIndex === null || currPlayer.usedDice[selectedDieIndex] || currPlayer.isAI}
+          style={{
+            padding: '8px 12px',
+            fontSize: '0.78rem',
+            borderRadius: '6px',
+            fontWeight: 800,
+            whiteSpace: 'nowrap'
+          }}
+          title="선택한 주사위 1개로 일꾼 토큰 2개 획득"
+        >
+          <Users size={14} /> 일꾼 +2
+        </button>
 
       </div>
     </div>

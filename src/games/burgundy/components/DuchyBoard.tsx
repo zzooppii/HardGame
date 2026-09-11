@@ -20,30 +20,32 @@ interface DuchyBoardProps {
 export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer }) => {
   const { selectedDieIndex, selectedKeySlotIndex, placeTileFromStorage } = useBurgundyStore();
 
-  const R = 34; // 육각 반지름
+  // 1화면 무스크롤을 위한 최적화된 육각 그리드 반지름 (R=28)
+  const R = 28;
   const width = R * Math.sqrt(3);
-  const centerX = 230;
-  const centerY = 200;
+  const centerX = 200;
+  const centerY = 165;
 
   const selectedTile = (isCurrentPlayer && selectedKeySlotIndex !== null) ? player.keySlots[selectedKeySlotIndex] : null;
   const dieValue = (isCurrentPlayer && selectedDieIndex !== null && !player.usedDice[selectedDieIndex]) ? player.dice[selectedDieIndex] : null;
 
   return (
-    <div className="saboteur-board-panel" style={{ padding: '16px', position: 'relative' }}>
-      {/* 1. 상단 사보타지 스타일 타이틀 바 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '10px' }}>
+    <div className="saboteur-board-panel" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+      
+      {/* 1. 영지 헤더 바 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: '#d4af37', fontSize: '0.85rem' }}>●</span>
-          <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
-            {player.name}의 영지 보드 (DUCHY)
+          <span style={{ color: '#d4af37', fontSize: '0.8rem' }}>●</span>
+          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
+            {player.name}의 영지 (DUCHY)
           </span>
           {isCurrentPlayer && (
             <span style={{ 
               background: 'rgba(212, 175, 55, 0.15)', 
               color: '#facc15', 
               border: '1px solid #d4af37', 
-              fontSize: '0.7rem', 
-              padding: '2px 8px', 
+              fontSize: '0.68rem', 
+              padding: '1px 6px', 
               borderRadius: '4px',
               fontWeight: 700 
             }}>
@@ -52,18 +54,7 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
           )}
         </div>
 
-        {/* 사보타지식 줌/보기 컨트롤 배지 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ 
-            background: 'rgba(0,0,0,0.4)', 
-            border: '1px solid rgba(255,255,255,0.1)', 
-            borderRadius: '4px', 
-            padding: '2px 8px', 
-            fontSize: '0.72rem', 
-            color: '#94a3b8' 
-          }}>
-            100%
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ 
             background: 'rgba(0,0,0,0.4)', 
             border: '1px solid rgba(212, 175, 55, 0.3)', 
@@ -71,24 +62,22 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
             padding: '2px 8px', 
             fontSize: '0.72rem', 
             color: '#facc15',
-            fontWeight: 700
+            fontWeight: 800
           }}>
             🏆 {player.vp} VP
           </span>
         </div>
       </div>
 
-      {/* 2. SVG 37칸 육각 벌집 맵 (사보타지 보드 질감 & 입체 펀칭 타일) */}
-      <div style={{ display: 'flex', justifyContent: 'center', overflowX: 'auto', padding: '6px 0' }}>
-        <svg width="460" height="400" viewBox="0 0 460 400" style={{ maxWidth: '100%', height: 'auto' }}>
+      {/* 2. 컴팩트 37칸 육각 벌집 맵 */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2px 0' }}>
+        <svg width="400" height="330" viewBox="0 0 400 330" style={{ maxWidth: '100%', height: 'auto' }}>
           <defs>
-            {/* 3D 펀칭 타일 드롭 섀도우 */}
             <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.8" />
+              <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#000000" floodOpacity="0.8" />
             </filter>
-            {/* 골드 하이라이트 글로우 */}
             <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#facc15" floodOpacity="0.8" />
+              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#facc15" floodOpacity="0.85" />
             </filter>
           </defs>
 
@@ -125,57 +114,54 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
                 {/* 육각 슬롯 배경 */}
                 <polygon
                   points={points}
-                  fill={isOccupied ? categoryMeta.bg : '#121815'}
+                  fill={isOccupied ? categoryMeta.bg : '#111714'}
                   stroke={canPlace ? '#fbbf24' : (isOccupied ? categoryMeta.border : 'rgba(212, 175, 55, 0.22)')}
-                  strokeWidth={canPlace ? '3' : (isOccupied ? '2' : '1')}
-                  strokeDasharray={!isOccupied ? '3, 2' : 'none'}
+                  strokeWidth={canPlace ? '2.5' : (isOccupied ? '1.8' : '1')}
+                  strokeDasharray={!isOccupied ? '2.5, 2' : 'none'}
                   filter={isOccupied ? 'url(#tileShadow)' : (canPlace ? 'url(#goldGlow)' : undefined)}
-                  style={{ transition: 'all 0.2s ease' }}
                 />
 
                 {/* 슬롯 내부 렌더링 */}
                 {isOccupied ? (
                   <>
-                    {/* 상단 2.5D 내부 하이라이트 림 */}
                     <polygon
                       points={points}
                       fill="none"
-                      stroke="rgba(255,255,255,0.25)"
-                      strokeWidth="1"
-                      transform={`translate(${x}, ${y}) scale(0.92) translate(${-x}, ${-y})`}
+                      stroke="rgba(255,255,255,0.22)"
+                      strokeWidth="0.8"
+                      transform={`translate(${x}, ${y}) scale(0.9) translate(${-x}, ${-y})`}
                     />
                     <text
                       x={x}
-                      y={y - 3}
+                      y={y - 2}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize="14"
+                      fontSize="12"
                     >
                       {slot.placedTile?.icon}
                     </text>
                     <text
                       x={x}
-                      y={y + 12}
+                      y={y + 10}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize="8"
+                      fontSize="7.5"
                       fontWeight="800"
                       fill="#f8fafc"
-                      letterSpacing="0.3px"
+                      letterSpacing="0.2px"
                     >
                       {slot.placedTile?.name.split(' ')[0]}
                     </text>
                   </>
                 ) : (
                   <>
-                    {/* 음각 홈 주사위 넘버 원형 마크 */}
                     <circle
                       cx={x}
                       cy={y}
-                      r="10"
+                      r="8.5"
                       fill="rgba(0, 0, 0, 0.5)"
                       stroke={categoryMeta.border}
-                      strokeWidth="1"
+                      strokeWidth="0.8"
                       opacity="0.6"
                     />
                     <text
@@ -183,7 +169,7 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
                       y={y + 1}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize="9"
+                      fontSize="8.5"
                       fontWeight="900"
                       fill={categoryMeta.text}
                     >
@@ -197,21 +183,13 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
         </svg>
       </div>
 
-      {isCurrentPlayer && selectedTile && (
-        <div style={{
-          marginTop: '8px',
-          textAlign: 'center',
-          fontSize: '0.8rem',
-          color: '#fbbf24',
-          fontWeight: 700,
-          background: 'rgba(212, 175, 55, 0.1)',
-          padding: '6px',
-          borderRadius: '6px',
-          border: '1px dashed #d4af37'
-        }}>
-          ✨ [황금빛으로 빛나는 슬롯]을 클릭하여 [{selectedTile.name}]을(를) 영지에 건설하세요.
-        </div>
-      )}
+      {/* 영지 안내 한 줄 */}
+      <div style={{ textAlign: 'center', fontSize: '0.72rem', color: selectedTile ? '#facc15' : '#94a3b8' }}>
+        {selectedTile 
+          ? `👉 [${selectedTile.name}] 배치: 위 육각 맵의 노란색 슬롯을 클릭하세요.`
+          : '성, 건물, 목장, 선박, 광산, 수도원을 조화롭게 배치하여 영지를 발전시키세요.'}
+      </div>
+
     </div>
   );
 };
