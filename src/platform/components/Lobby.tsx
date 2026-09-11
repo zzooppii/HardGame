@@ -339,7 +339,9 @@ export const Lobby: React.FC<LobbyProps> = ({ onSelectGame }) => {
           onClose={() => setSetupModalOpen(false)}
           onStartGame={() => {
             setSetupModalOpen(false);
-            const gameId = targetGameTitle === '버건디의 성' ? 'burgundy' : 'puerto-rico';
+            const gameId = targetGameTitle === '르아브르' 
+              ? 'le-havre' 
+              : (targetGameTitle === '버건디의 성' ? 'burgundy' : 'puerto-rico');
             onSelectGame(gameId);
           }}
         />

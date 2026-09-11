@@ -45,7 +45,7 @@ export const BOARD_GAMES_LIST: BoardGameMeta[] = [
     category: ['원자재 가공', '항구 물류', '선박 건조', '엔진 빌딩'],
     flavorText: '프랑스 북부 최대 항구 르아브르의 거물이 되어 무역과 해운을 장악하세요.',
     description: '원자재를 선적하고 공장을 지어 강철, 가죽, 빵 등으로 가공하며 대형 선박을 건조하는 우베 로젠버그의 묵직한 항구 경영 전략 게임입니다.',
-    status: 'in_development',
+    status: 'available',
     accentColor: '#34d399',
     bannerImage: 'linear-gradient(135deg, #064e3b 0%, #022c22 60%, #34d399 100%)'
   },
