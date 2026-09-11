@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { peerManager } from '../network/peerManager';
 import type { LobbyPlayer } from '../network/peerManager';
 import { usePuertoRicoStore, getSerializableGameState } from '../../games/puerto-rico/store/usePuertoRicoStore';
+import { useBurgundyStore } from '../../games/burgundy/store/useBurgundyStore';
 import { Users, Bot, Globe, Copy, Check, Play, UserCheck, Loader2 } from 'lucide-react';
 
 interface GameSetupModalProps {
@@ -226,7 +227,11 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
 
   // 솔로 / 로컬 시작
   const handleStartSoloOrLocal = () => {
-    initGame(playerCount, activeTab === 'solo');
+    if (gameTitle === '버건디의 성') {
+      useBurgundyStore.getState().initGame(playerCount, activeTab === 'solo');
+    } else {
+      initGame(playerCount, activeTab === 'solo');
+    }
     onStartGame();
   };
 

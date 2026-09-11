@@ -29,7 +29,7 @@ export const BOARD_GAMES_LIST: BoardGameMeta[] = [
     category: ['주사위 드래프트', '타일 배치', '영지 개발', '연쇄 콤보'],
     flavorText: '15세기 프랑스 부르고뉴 지방의 군주가 되어 주변 영지를 가장 번영시키세요.',
     description: '주사위 눈금을 활용해 영지 타일을 매입하고 배치하여 가축 목장, 성, 광산, 도시를 번영시키는 스테판 펠트의 영지 배치 마스터피스입니다.',
-    status: 'in_development',
+    status: 'available',
     accentColor: '#38bdf8',
     bannerImage: 'linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #38bdf8 100%)'
   },

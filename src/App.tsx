@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Lobby } from './platform/components/Lobby';
 import { PuertoRicoGame } from './games/puerto-rico/PuertoRicoGame';
+import { BurgundyGame } from './games/burgundy/BurgundyGame';
 import { Dices } from 'lucide-react';
 
 export function App() {
@@ -68,6 +69,8 @@ export function App() {
       <div style={{ flex: 1 }}>
         {activeGameId === 'puerto-rico' ? (
           <PuertoRicoGame onBackToLobby={() => setActiveGameId(null)} />
+        ) : activeGameId === 'burgundy' ? (
+          <BurgundyGame onBackToLobby={() => setActiveGameId(null)} />
         ) : (
           <Lobby onSelectGame={(gameId) => setActiveGameId(gameId)} />
         )}

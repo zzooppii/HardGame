@@ -232,6 +232,35 @@ class SoundManager {
     osc.start(now);
     osc.stop(now + 0.04);
   }
+
+  /** 8. 주사위 굴리는 달그락 소리 (Dice Roll Clatter) */
+  public playDiceRoll() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    // 3~4회의 빠른 목재/플라스틱 주사위 튕김 소리
+    const bounces = [0, 0.06, 0.13, 0.2];
+    bounces.forEach((delay, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      const freq = 450 + Math.random() * 150 - i * 40;
+      osc.frequency.setValueAtTime(freq, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(120, now + delay + 0.05);
+
+      gain.gain.setValueAtTime(0.18 - i * 0.03, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.05);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.06);
+    });
+  }
 }
 
 export const soundManager = new SoundManager();
