@@ -445,3 +445,116 @@ body {
   transition: all 0.2s ease;
   backdrop-filter: blur(8px);
 }
+
+/* ==========================================================================
+   SABOTEUR-INSPIRED HIGH-END BOARDGAME THEME (버건디의 성 마스터피스 룩)
+   ========================================================================== */
+.theme-burgundy-masterpiece {
+  background: 
+    radial-gradient(circle at 50% 10%, rgba(20, 32, 26, 0.9) 0%, rgba(10, 15, 13, 0.98) 100%),
+    #0c100e !important;
+  color: #e2e8f0 !important;
+  min-height: 100vh;
+}
+
+/* 사보타지 스타일 상단 플레이어 트랙 캡슐 */
+.saboteur-player-capsule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(18, 26, 22, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+.saboteur-player-capsule.active-turn {
+  background: linear-gradient(135deg, rgba(28, 42, 34, 0.95) 0%, rgba(18, 28, 23, 0.95) 100%);
+  border: 1.5px solid #d4af37;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.35), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* 사보타지 스타일 메인 보드 패널 (펠트 보드 질감) */
+.saboteur-board-panel {
+  background: linear-gradient(145deg, #18221d 0%, #121915 100%);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+/* 3D 펀칭 육각 타일 (실물 보드게임 두께감) */
+.hex-tile-punchboard {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hex-tile-punchboard:hover {
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.8)) brightness(1.08);
+}
+
+/* 실제 3D 주사위 큐브 */
+.die-cube-3d {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #ffffff 0%, #e2e8f0 70%, #cbd5e1 100%);
+  box-shadow: 
+    0 6px 0 #94a3b8,
+    0 10px 18px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  user-select: none;
+}
+.die-cube-3d:active {
+  transform: translateY(4px);
+  box-shadow: 
+    0 2px 0 #94a3b8,
+    0 4px 8px rgba(0, 0, 0, 0.5);
+}
+.die-cube-3d.selected {
+  background: linear-gradient(145deg, #fef08a 0%, #facc15 70%, #ca8a04 100%);
+  box-shadow: 
+    0 6px 0 #a16207,
+    0 0 20px rgba(250, 204, 21, 0.6),
+    inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  color: #451a03;
+}
+.die-cube-3d.used {
+  background: #334155;
+  box-shadow: 0 2px 0 #1e293b;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 사보타지 스타일 하단 손패/자원 트레이 */
+.saboteur-bottom-tray {
+  background: linear-gradient(180deg, #131a16 0%, #0c110f 100%);
+  border-top: 1.5px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
+  padding: 14px 20px;
+}
+
+/* 황동 씰(Brass Seal) 디포 배지 */
+.brass-seal-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fde047 0%, #ca8a04 60%, #854d0e 100%);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  border: 1.5px solid #a16207;
+  color: #2b1704;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}

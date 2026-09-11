@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useBurgundyStore } from './store/useBurgundyStore';
 import { DuchyBoard } from './components/DuchyBoard';
 import { CentralDepotBoard } from './components/CentralDepotBoard';
-import { DiceControls } from './components/DiceControls';
-import { PlayerStorage } from './components/PlayerStorage';
+import { PlayerBottomTray } from './components/PlayerBottomTray';
 import { BurgundyGameOverModal } from './components/BurgundyGameOverModal';
-import { ArrowLeft, RotateCcw, Volume2, VolumeX, HelpCircle } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, LogOut } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import { subscribeFeedback } from '../../utils/feedback';
 
@@ -27,9 +26,7 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
     players,
     currentTurnPlayerIndex,
     logs,
-    initGame,
-    uiTheme,
-    toggleUITheme
+    initGame
   } = useBurgundyStore();
 
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
@@ -37,12 +34,10 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
   const [viewingPlayerId, setViewingPlayerId] = useState<string>('p-0');
   const [showRulesModal, setShowRulesModal] = useState(false);
 
-  // 게임 초기화
   useEffect(() => {
     initGame(2, true);
   }, []);
 
-  // 플로팅 인터랙션 피드백 구독
   useEffect(() => {
     const unsubscribe = subscribeFeedback((item) => {
       setFeedbacks((prev) => [...prev, item]);
@@ -59,113 +54,63 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
     if (!muted) soundManager.playCoin();
   };
 
-  const isTabletop = uiTheme === 'tabletop';
   const currTurnPlayer = players[currentTurnPlayerIndex];
   const viewedPlayer = players.find(p => p.id === viewingPlayerId) || players[0];
 
   return (
-    <div 
-      className={isTabletop ? 'theme-tabletop' : 'theme-modern'} 
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '12px 14px',
-        maxWidth: '1600px',
-        margin: '0 auto',
-        transition: 'all 0.3s ease'
-      }}
-    >
-      {/* 1. 상단 제어 헤더 바 */}
-      <header className="game-header-bar" style={{
+    <div className="theme-burgundy-masterpiece" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '16px 24px', maxWidth: '1680px', margin: '0 auto' }}>
+      
+      {/* 1. 최상단 사보타지 스타일 글로벌 바 */}
+      <header style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '12px 18px',
-        borderRadius: '12px',
-        background: isTabletop ? 'rgba(15, 38, 70, 0.92)' : 'rgba(22, 27, 34, 0.85)',
-        backdropFilter: 'blur(12px)',
-        border: isTabletop ? '2px solid #d4af37' : '1px solid var(--amber-border)',
-        boxShadow: isTabletop ? '0 6px 20px rgba(0,0,0,0.5)' : 'none',
-        marginBottom: '16px'
+        paddingBottom: '12px',
+        borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
+        marginBottom: '14px'
       }}>
-        {/* 좌측: 로비 버튼 & 게임 제목 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            className="btn-secondary" 
-            onClick={onBackToLobby}
-            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-          >
-            <ArrowLeft size={15} /> 로비
-          </button>
-          <div>
-            <h1 className="font-serif text-gold-gradient" style={{ fontSize: '1.2rem', margin: 0 }}>
-              {isTabletop ? '🎲 버건디의 성 (Tabletop)' : '버건디의 성'}
+        <div>
+          <div style={{ fontSize: '0.68rem', letterSpacing: '2px', color: '#d4af37', fontWeight: 700, marginBottom: '2px' }}>
+            A GAME OF PRINCIPALITIES & COMBOS
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+            <h1 className="font-serif" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '1px', margin: 0 }}>
+              THE CASTLES OF BURGUNDY
             </h1>
+            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>버건디의 성</span>
           </div>
         </div>
 
-        {/* 우측: 페이즈, 라운드, 턴 배지, 테마 전환, 규칙, 사운드, 재시작 */}
-        <div className="header-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="badge badge-gold" style={{ fontSize: '0.82rem', padding: '4px 10px' }}>
-            페이즈 {phase} - 라운드 {round}/5
-          </div>
-
-          <span className="badge" style={{ 
-            background: currTurnPlayer?.isAI ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)', 
-            color: currTurnPlayer?.isAI ? '#f87171' : '#4ade80', 
-            border: `1px solid ${currTurnPlayer?.isAI ? '#f87171' : '#4ade80'}`, 
-            fontSize: '0.78rem' 
-          }}>
-            {currTurnPlayer?.isAI ? `🤖 ${currTurnPlayer?.name} 생각 중` : `👑 ${currTurnPlayer?.name} 차례`}
+        {/* 우측 상단 상태 및 제어 버튼 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            방 <strong>BGD-2026</strong>
+          </span>
+          <span style={{ fontSize: '0.72rem', color: '#4ade80', background: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+            솔로 AI 세션
           </span>
 
-          {/* 테마 토글 */}
-          <button
-            onClick={toggleUITheme}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              background: isTabletop ? 'linear-gradient(135deg, #f5ecd5 0%, #dfcfac 100%)' : 'rgba(255,255,255,0.08)',
-              color: isTabletop ? '#2b1805' : 'var(--gold-secondary)',
-              border: isTabletop ? '1.5px solid #8a6534' : '1px solid var(--amber-border)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            {isTabletop ? '🎲 실물 모드' : '🌙 다크 모드'}
-          </button>
-
-          {/* 규칙 도감 */}
           <button 
-            className="btn-secondary" 
             onClick={() => {
               soundManager.playClick();
               setShowRulesModal(true);
             }}
-            style={{ padding: '6px 10px', fontSize: '0.78rem' }}
-          >
-            <HelpCircle size={14} color="var(--gold-secondary)" /> 규칙
-          </button>
-
-          {/* 재시작 */}
-          <button 
-            className="btn-secondary" 
-            onClick={() => {
-              soundManager.playClick();
-              initGame(players.length, true);
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(212, 175, 55, 0.25)',
+              color: '#f8fafc',
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
             }}
-            style={{ padding: '6px 10px', fontSize: '0.78rem' }}
           >
-            <RotateCcw size={14} /> 재시작
+            <HelpCircle size={14} color="#d4af37" /> 게임 방법
           </button>
 
-          {/* 사운드 토글 */}
           <button
             className={`sound-toggle-btn ${!isMuted ? 'active' : ''}`}
             onClick={handleToggleMute}
@@ -173,105 +118,187 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
           >
             {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
+
+          <button 
+            onClick={onBackToLobby}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <LogOut size={14} /> 나가기
+          </button>
         </div>
       </header>
 
-      {/* 2. 플레이어 선택 탭 바 */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', overflowX: 'auto' }}>
-        {players.map(p => {
-          const isSelected = p.id === viewingPlayerId;
-          const isTurn = p.id === currTurnPlayer?.id;
+      {/* 2. 사보타지 턴 인디케이터 & 캡슐형 플레이어 트랙 */}
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          {/* 라운드 카운터 & 턴 안내 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+              <span className="font-serif" style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f8fafc' }}>{phase}</span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>/ 5</span>
+              <span style={{ fontSize: '0.68rem', letterSpacing: '1px', color: '#d4af37', fontWeight: 800, marginLeft: '2px' }}>PHASE</span>
+            </div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: currTurnPlayer?.isAI ? '#f87171' : '#4ade80' }}>
+              {currTurnPlayer?.name}님의 차례
+            </div>
+          </div>
 
-          return (
-            <button
-              key={p.id}
-              onClick={() => {
-                soundManager.playClick();
-                setViewingPlayerId(p.id);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                background: isSelected 
-                  ? (isTabletop ? '#dfcfac' : 'rgba(30, 41, 59, 0.95)') 
-                  : (isTabletop ? '#fdf6e2' : 'rgba(15, 23, 42, 0.6)'),
-                border: isSelected 
-                  ? (isTabletop ? '2px solid #6b441a' : `2px solid ${p.color}`) 
-                  : (isTabletop ? '1px solid #c4a77d' : '1px solid var(--border-subtle)'),
-                color: isTabletop ? '#2b1805' : (isSelected ? '#f8fafc' : 'var(--text-muted)'),
-                cursor: 'pointer',
-                fontWeight: isSelected ? 800 : 500
-              }}
-            >
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: p.color }} />
-              <span style={{ fontSize: '0.85rem' }}>{p.name}</span>
-              {isTurn && <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 800 }}>[현재 턴]</span>}
-              <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>🏆{p.vp} VP</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 3. 본문 게임 레이아웃 */}
-      <main style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) minmax(480px, 1fr) 280px', gap: '16px', alignItems: 'start' }}>
-        
-        {/* 1열: 주사위 컨트롤 & 중앙 주사위 디포 보드 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <DiceControls />
-          <CentralDepotBoard />
+          <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+            라운드 <strong>{round} / 5</strong>
+          </div>
         </div>
 
-        {/* 2열: 영지 육각 맵 & 개인 타일 보관소 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {viewedPlayer && (
-            <DuchyBoard 
-              player={viewedPlayer} 
-              isCurrentPlayer={viewedPlayer.id === currTurnPlayer?.id} 
-            />
-          )}
-          <PlayerStorage />
-        </div>
+        {/* 플레이어 캡슐 바 (사보타지 상단 캡슐 1:1 벤치마크) */}
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+          {players.map((p, idx) => {
+            const isTurn = p.id === currTurnPlayer?.id;
+            const isViewing = p.id === viewingPlayerId;
 
-        {/* 3열: 게임 로그 패널 */}
-        <div style={{
-          background: isTabletop ? '#fdf6e2' : 'rgba(15, 23, 42, 0.75)',
-          borderRadius: '12px',
-          padding: '14px',
-          border: isTabletop ? '2px solid #8a6534' : '1px solid var(--border-subtle)',
-          maxHeight: '750px',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: isTabletop ? '#2b1805' : 'var(--gold-secondary)' }}>
-            📜 게임 진행 로그
-          </h4>
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.78rem' }}>
-            {logs.map((log, lIdx) => (
-              <div 
-                key={lIdx} 
-                style={{ 
-                  padding: '6px 8px', 
-                  borderRadius: '6px', 
-                  background: isTabletop ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)',
-                  color: isTabletop ? '#42280d' : '#cbd5e1',
-                  lineHeight: 1.35
+            return (
+              <div
+                key={p.id}
+                className={`saboteur-player-capsule ${isTurn ? 'active-turn' : ''}`}
+                onClick={() => {
+                  soundManager.playClick();
+                  setViewingPlayerId(p.id);
+                }}
+                style={{
+                  cursor: 'pointer',
+                  minWidth: '220px',
+                  opacity: isViewing ? 1 : 0.75,
+                  position: 'relative'
                 }}
               >
-                {log}
+                {/* 플레이어 번호 */}
+                <div style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: isTurn ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 900,
+                  fontSize: '0.75rem',
+                  color: isTurn ? '#fff' : '#94a3b8'
+                }}>
+                  0{idx + 1}
+                </div>
+
+                {/* 플레이어 정보 */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#f8fafc' }}>
+                      {p.name}
+                    </span>
+                    {idx === 0 && (
+                      <span style={{ fontSize: '0.65rem', background: '#d97706', color: '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
+                        나
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
+                    🪙 {p.silverlings} · 👷 {p.workers} · 🏆 {p.vp} VP
+                  </div>
+                </div>
+
+                {/* 영지 슬롯 현황 미니 인디케이터 */}
+                <div style={{ fontSize: '1rem', opacity: 0.8 }}>
+                  🏰
+                </div>
               </div>
-            ))}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. 메인 게임 보드 (좌측: 중앙 디포, 중앙: 영지 육각 맵, 우측: 사보타지 사이드 패널) */}
+      <main style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 1fr) minmax(460px, 1.15fr) 280px', gap: '16px', flex: 1, alignItems: 'start' }}>
+        
+        {/* [A] 중앙 디포 & 암시장 */}
+        <CentralDepotBoard />
+
+        {/* [B] 영지 보드 */}
+        {viewedPlayer && (
+          <DuchyBoard 
+            player={viewedPlayer} 
+            isCurrentPlayer={viewedPlayer.id === currTurnPlayer?.id} 
+          />
+        )}
+
+        {/* [C] 사보타지 스타일 사이드 정보 & 로그 패널 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          
+          {/* 사보타지 "ONLY YOU CAN SEE" 스타일 군주 상태창 */}
+          <div className="saboteur-board-panel" style={{ padding: '16px', border: '1px solid rgba(212, 175, 55, 0.4)' }}>
+            <div style={{ fontSize: '0.65rem', letterSpacing: '1.5px', color: '#d4af37', fontWeight: 800, marginBottom: '8px' }}>
+              ONLY YOU CAN SEE
+            </div>
+            <div style={{
+              background: 'rgba(10, 15, 13, 0.8)',
+              borderRadius: '8px',
+              padding: '12px',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '1.6rem', marginBottom: '2px' }}>👑</div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#f8fafc' }}>부르고뉴 통치 군주</div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
+                승점: <strong style={{ color: '#facc15' }}>{currTurnPlayer?.vp} VP</strong> | 순서: 1위
+              </div>
+            </div>
           </div>
+
+          {/* 사보타지 "광산의 대화" 스타일 영지 연대기 로그 */}
+          <div className="saboteur-board-panel" style={{ padding: '16px', flex: 1, maxHeight: '420px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f8fafc' }}>
+                영지 연대기
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#64748b' }}>모두에게 공개</span>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem', paddingRight: '4px' }}>
+              {logs.map((log, lIdx) => (
+                <div 
+                  key={lIdx} 
+                  style={{ 
+                    padding: '6px 8px', 
+                    borderRadius: '6px', 
+                    background: 'rgba(0,0,0,0.35)', 
+                    borderLeft: '2px solid #d4af37',
+                    color: '#cbd5e1',
+                    lineHeight: 1.35
+                  }}
+                >
+                  {log}
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
 
       </main>
 
-      {/* 4. 게임 종료 모달 */}
+      {/* 4. 사보타지 '내 손패' 벤치마크: 하단 일체형 트레이 */}
+      <PlayerBottomTray />
+
+      {/* 게임 종료 모달 */}
       <BurgundyGameOverModal onReturnToLobby={onBackToLobby} />
 
-      {/* 5. 규칙 안내 모달 */}
+      {/* 규칙 모달 */}
       {showRulesModal && (
         <div style={{
           position: 'fixed',
@@ -279,15 +306,15 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(5, 8, 15, 0.8)',
-          backdropFilter: 'blur(6px)',
+          backgroundColor: 'rgba(5, 8, 15, 0.85)',
+          backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 200,
           padding: '20px'
         }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', padding: '28px', background: '#0f172a' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', padding: '28px', background: '#0e1411', border: '1.5px solid #d4af37' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 className="font-serif text-gold-gradient" style={{ margin: 0, fontSize: '1.4rem' }}>
                 버건디의 성 게임 규칙 가이드
@@ -296,25 +323,25 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
             </div>
             <div style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '12px', lineHeight: 1.5 }}>
               <div>
-                <strong style={{ color: '#facc15' }}>1. 주사위 액션 (Dice Actions)</strong>
+                <strong style={{ color: '#facc15' }}>1. 주사위 드래프트 액션</strong>
                 <p style={{ margin: '4px 0 0 0' }}>
                   매 라운드 2개의 주사위를 굴립니다. 각 주사위로 ① 해당 눈금 디포에서 타일 가져오기, ② 보관소 타일을 영지의 일치하는 눈금 칸에 배치하기, ③ 상품 판매, ④ 일꾼 2개 영입 중 하나를 수행합니다.
                 </p>
               </div>
               <div>
-                <strong style={{ color: '#facc15' }}>2. 일꾼 토큰 (Workers)</strong>
+                <strong style={{ color: '#facc15' }}>2. 일꾼 토큰 보정 (±1)</strong>
                 <p style={{ margin: '4px 0 0 0' }}>
                   일꾼 1개를 소모하여 주사위 눈금을 ±1 조정할 수 있습니다. 1과 6은 서로 순환 연결됩니다.
                 </p>
               </div>
               <div>
-                <strong style={{ color: '#facc15' }}>3. 타일 배치 규칙 & 인접성</strong>
+                <strong style={{ color: '#facc15' }}>3. 영지 배치 인접성</strong>
                 <p style={{ margin: '4px 0 0 0' }}>
                   타일은 색상과 주사위 번호가 일치하고, 이미 배치된 기존 타일과 최소 1변 이상 맞닿아 있는 슬롯에만 놓을 수 있습니다.
                 </p>
               </div>
               <div>
-                <strong style={{ color: '#facc15' }}>4. 구역 완성 보너스</strong>
+                <strong style={{ color: '#facc15' }}>4. 구역 완성 점수</strong>
                 <p style={{ margin: '4px 0 0 0' }}>
                   같은 색상의 연결된 구역을 타일로 모두 채우면 구역 크기 점수(1~8칸)와 페이즈 조기 완성 보너스(A: 10점 ~ E: 2점)를 대량 획득합니다!
                 </p>
@@ -324,7 +351,7 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
         </div>
       )}
 
-      {/* 6. 플로팅 피드백 오버레이 */}
+      {/* 플로팅 피드백 오버레이 */}
       {feedbacks.map((f) => (
         <div
           key={f.id}
@@ -334,6 +361,7 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
           {f.text}
         </div>
       ))}
+
     </div>
   );
 };
