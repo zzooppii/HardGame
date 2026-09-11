@@ -12,7 +12,7 @@ interface PuertoRicoGameProps {
 }
 
 export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby }) => {
-  const { round, playMode, roomCode, myPlayerId, players, currentTurnPlayerIndex, initGame } = usePuertoRicoStore();
+  const { round, playMode, roomCode, myPlayerId, players, currentTurnPlayerIndex, initGame, uiTheme, toggleUITheme } = usePuertoRicoStore();
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -31,8 +31,10 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const isTabletop = uiTheme === 'tabletop';
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '12px 14px', maxWidth: '1600px', margin: '0 auto' }}>
+    <div className={isTabletop ? 'theme-tabletop' : 'theme-modern'} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '12px 14px', maxWidth: '1600px', margin: '0 auto', transition: 'all 0.3s ease' }}>
       
       {/* 상단 네비게이션 & 제어 바 */}
       <header className="game-header-bar" style={{
@@ -41,9 +43,10 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
         alignItems: 'center',
         padding: '12px 18px',
         borderRadius: '12px',
-        background: 'rgba(22, 27, 34, 0.85)',
+        background: isTabletop ? 'rgba(15, 38, 70, 0.92)' : 'rgba(22, 27, 34, 0.85)',
         backdropFilter: 'blur(12px)',
-        border: '1px solid var(--amber-border)',
+        border: isTabletop ? '2px solid #d4af37' : '1px solid var(--amber-border)',
+        boxShadow: isTabletop ? '0 6px 20px rgba(0,0,0,0.5)' : 'none',
         marginBottom: '16px'
       }}>
         {/* 1열/좌측: 로비 나가기 & 게임 제목 */}
@@ -58,8 +61,8 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
             </button>
             
             <div>
-              <h1 className="font-serif text-gold-gradient" style={{ fontSize: '1.15rem', margin: 0 }}>
-                푸에르토리코
+              <h1 className="font-serif text-gold-gradient" style={{ fontSize: '1.2rem', margin: 0 }}>
+                {isTabletop ? '🎲 푸에르토리코 (테이블탑)' : '푸에르토리코'}
               </h1>
             </div>
           </div>
@@ -81,7 +84,7 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
           )}
         </div>
 
-        {/* 2열/중앙 및 우측: 라운드, 턴 상태, 규칙 & 다시시작 */}
+        {/* 2열/중앙 및 우측: 라운드, 턴 상태, 테마 토글, 규칙 & 다시시작 */}
         <div className="header-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div className="badge badge-gold" style={{ fontSize: '0.82rem', padding: '4px 10px' }}>
             라운드 {round}
@@ -92,6 +95,29 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
               ⏳ {currTurnPlayer?.name} 행동 중
             </span>
           )}
+
+          {/* 듀얼 테마 토글 버튼 (원클릭 전환 안전장치) */}
+          <button
+            onClick={toggleUITheme}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              background: isTabletop ? 'linear-gradient(135deg, #f5ecd5 0%, #dfcfac 100%)' : 'rgba(255,255,255,0.08)',
+              color: isTabletop ? '#2b1805' : 'var(--gold-secondary)',
+              border: isTabletop ? '1.5px solid #8a6534' : '1px solid var(--amber-border)',
+              boxShadow: isTabletop ? '0 2px 6px rgba(0,0,0,0.3)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+            title="실물 보드게임 테마와 모던 다크 테마를 자유롭게 전환합니다"
+          >
+            {isTabletop ? '🎲 실물 보드게임 모드' : '🌙 모던 다크 모드'}
+          </button>
 
           <button 
             className="btn-secondary" 

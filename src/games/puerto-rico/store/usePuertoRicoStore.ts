@@ -47,7 +47,9 @@ interface PuertoRicoStore extends PuertoRicoGameState {
   myPlayerId: string;
   isHost: boolean;
   roomCode: string | null;
+  uiTheme: 'tabletop' | 'modern';
 
+  toggleUITheme: () => void;
   initGame: (playerCount?: number, soloVsAI?: boolean) => void;
   initOnlineGame: (
     playerCount: number, 
@@ -94,6 +96,13 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
   myPlayerId: 'p-0',
   isHost: true,
   roomCode: null,
+  uiTheme: (localStorage.getItem('puerto_rico_theme') as 'tabletop' | 'modern') || 'tabletop',
+
+  toggleUITheme: () => {
+    const nextTheme = get().uiTheme === 'tabletop' ? 'modern' : 'tabletop';
+    localStorage.setItem('puerto_rico_theme', nextTheme);
+    set({ uiTheme: nextTheme });
+  },
 
   players: [],
   governorIndex: 0,
