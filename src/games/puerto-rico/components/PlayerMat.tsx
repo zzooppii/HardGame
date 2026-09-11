@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePuertoRicoStore } from '../store/usePuertoRicoStore';
 import { BUILDINGS_CATALOG, GOODS_DATA } from '../data/buildings';
 import type { GoodType } from '../types';
+import { soundManager } from '../../../utils/sound';
 
 export const PlayerMat: React.FC = () => {
   const { players, governorIndex, currentTurnPlayerIndex, uiTheme } = usePuertoRicoStore();
@@ -27,7 +28,10 @@ export const PlayerMat: React.FC = () => {
           return (
             <button
               key={p.id}
-              onClick={() => setActiveTabPlayerId(p.id)}
+              onClick={() => {
+                soundManager.playClick();
+                setActiveTabPlayerId(p.id);
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -311,7 +315,7 @@ export const PlayerMat: React.FC = () => {
                 return (
                   <div
                     key={idx}
-                    title={bDef?.desc}
+                    className="building-card-tooltip"
                     style={{
                       height: '68px',
                       borderRadius: '6px',
@@ -325,7 +329,8 @@ export const PlayerMat: React.FC = () => {
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      boxShadow: isTabletop ? '0 3px 0 rgba(0,0,0,0.3)' : (isActive ? '0 0 8px rgba(250, 204, 21, 0.2)' : 'none')
+                      boxShadow: isTabletop ? '0 3px 0 rgba(0,0,0,0.3)' : (isActive ? '0 0 8px rgba(250, 204, 21, 0.2)' : 'none'),
+                      cursor: 'help'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -355,8 +360,21 @@ export const PlayerMat: React.FC = () => {
                         ))}
                       </div>
                       <span style={{ fontSize: '0.65rem', color: isActive ? '#a3e635' : '#cbd5e1' }}>
-                        {isActive ? '작동' : '정지'}
+                        {isActive ? '작동 중' : '일꾼 필요'}
                       </span>
+                    </div>
+
+                    {/* 마우스 호버 상세 툴팁 */}
+                    <div className="tooltip-content">
+                      <div style={{ fontWeight: 700, color: '#fcd34d', marginBottom: '4px', fontSize: '0.82rem' }}>
+                        {bDef?.koreanName} ({bDef?.vp}점)
+                      </div>
+                      <div style={{ color: '#cbd5e1', marginBottom: '4px' }}>
+                        {bDef?.desc}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: isActive ? '#86efac' : '#f87171' }}>
+                        상태: {isActive ? '● 활성화되어 효과 적용 중' : '○ 일꾼이 없어 효과 비활성화'}
+                      </div>
                     </div>
                   </div>
                 );

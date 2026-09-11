@@ -3,12 +3,15 @@ import { usePuertoRicoStore } from '../store/usePuertoRicoStore';
 import { calculateFinalScore } from '../engine/gameLogic';
 import confetti from 'canvas-confetti';
 import { RotateCcw, Home } from 'lucide-react';
+import { soundManager } from '../../../utils/sound';
 
 export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onReturnToLobby }) => {
   const { isGameOver, endReason, players, initGame } = usePuertoRicoStore();
 
   useEffect(() => {
     if (isGameOver) {
+      // 승리 팡파르 효과음 재생
+      soundManager.playFanfare();
       // 콘페티 축하 효과 발사
       confetti({
         particleCount: 120,

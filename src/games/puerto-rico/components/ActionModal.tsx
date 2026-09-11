@@ -5,6 +5,8 @@ import { calculateBuildingCost, calculateProduction, hasBuilding } from '../engi
 import type { GoodType, PlantationType } from '../types';
 import { PuertoRicoAI } from '../engine/aiPlayer';
 import { Sparkles, Check } from 'lucide-react';
+import { soundManager } from '../../../utils/sound';
+import { showFeedback } from '../../../utils/feedback';
 
 export const ActionModal: React.FC = () => {
   const { 
@@ -39,6 +41,49 @@ export const ActionModal: React.FC = () => {
   const roleCard = roleCards.find(rc => rc.role === currentRole);
   const hasPrivilege = roleCard?.selectedByPlayerId === player.id;
 
+  const handleSettler = (type: PlantationType) => {
+    soundManager.playWoodToken();
+    showFeedback('+1 🌾 농경지 개척');
+    executeSettler(type);
+  };
+
+  const handleMayor = (assignment: any) => {
+    soundManager.playWoodToken();
+    showFeedback('👷 일꾼 배치 완료');
+    executeMayor(assignment);
+  };
+
+  const handleBuilder = (buildingId: string | null) => {
+    if (buildingId) {
+      soundManager.playBuild();
+      setTimeout(() => soundManager.playCoin(), 120);
+      showFeedback('🏠 건물 건설 완료!');
+    }
+    executeBuilder(buildingId);
+  };
+
+  const handleCraftsman = (bonusGood: GoodType | null) => {
+    soundManager.playWoodToken();
+    showFeedback('📦 상품 생산 완료');
+    executeCraftsman(bonusGood || undefined);
+  };
+
+  const handleTrader = (goodType: GoodType | null) => {
+    if (goodType) {
+      soundManager.playCoin();
+      showFeedback('+🪙 두블론 판매 수입');
+    }
+    executeTrader(goodType);
+  };
+
+  const handleCaptain = (shipIndex: number | null, goodType: GoodType | null) => {
+    if (shipIndex !== null && goodType !== null) {
+      soundManager.playShipCargo();
+      showFeedback('+🏆 선적 완료 (승점 획득)');
+    }
+    executeCaptain(shipIndex, goodType);
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -46,8 +91,8 @@ export const ActionModal: React.FC = () => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(5, 8, 15, 0.75)',
-      backdropFilter: 'blur(6px)',
+      backgroundColor: 'rgba(5, 8, 15, 0.85)',
+      backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -58,17 +103,17 @@ export const ActionModal: React.FC = () => {
         className="glass-panel" 
         style={{
           width: '100%',
-          maxWidth: '720px',
+          maxWidth: '740px',
           maxHeight: '90vh',
           overflowY: 'auto',
           padding: '28px',
-          background: 'linear-gradient(145deg, #1a2233 0%, #0f1624 100%)',
+          background: 'linear-gradient(145deg, #182030 0%, #0d121d 100%)',
           border: '1.5px solid var(--amber-border-bright)',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(229, 169, 60, 0.2)'
+          boxShadow: '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(229, 169, 60, 0.15)'
         }}
       >
-        {/* 모달 헤더 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '14px', marginBottom: '20px' }}>
+        {/* 모달 헤더: 역할 이름 및 특권 여부 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '14px' }}>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--gold-secondary)', fontWeight: 600 }}>
               {player.name}님의 행동 차례
@@ -97,7 +142,7 @@ export const ActionModal: React.FC = () => {
             quarrySupply={quarrySupply} 
             hasPrivilege={hasPrivilege} 
             hasConstHut={hasBuilding(player, 'construction_hut')}
-            onSelect={executeSettler}
+            onSelect={handleSettler}
             onPass={passCurrentAction}
           />
         )}
@@ -105,7 +150,7 @@ export const ActionModal: React.FC = () => {
         {currentPhase === 'mayor_assign' && (
           <MayorActionView 
             player={player}
-            onComplete={executeMayor}
+            onComplete={handleMayor}
           />
         )}
 
@@ -113,15 +158,15 @@ export const ActionModal: React.FC = () => {
           <BuilderActionView 
             player={player}
             hasPrivilege={hasPrivilege}
-            onBuild={executeBuilder}
-            onPass={() => executeBuilder(null)}
+            onBuild={handleBuilder}
+            onPass={() => handleBuilder(null)}
           />
         )}
 
         {currentPhase === 'craftsman_bonus' && (
           <CraftsmanBonusView 
             player={player}
-            onSelectBonus={executeCraftsman}
+            onSelectBonus={handleCraftsman}
           />
         )}
 
@@ -130,8 +175,8 @@ export const ActionModal: React.FC = () => {
             player={player}
             hasPrivilege={hasPrivilege}
             tradingHouse={tradingHouse}
-            onTrade={executeTrader}
-            onPass={() => executeTrader(null)}
+            onTrade={handleTrader}
+            onPass={() => handleTrader(null)}
           />
         )}
 
@@ -139,8 +184,8 @@ export const ActionModal: React.FC = () => {
           <CaptainActionView 
             player={player}
             cargoShips={cargoShips}
-            onShip={executeCaptain}
-            onPass={() => executeCaptain(null, null)}
+            onShip={handleCaptain}
+            onPass={() => handleCaptain(null, null)}
           />
         )}
 

@@ -4,6 +4,8 @@ import { ROLES_DATA } from '../data/roles';
 import { GOODS_DATA } from '../data/buildings';
 import type { GoodType } from '../types';
 import { Anchor, Store, ShieldCheck } from 'lucide-react';
+import { soundManager } from '../../../utils/sound';
+import { showFeedback } from '../../../utils/feedback';
 
 export const GameBoard: React.FC = () => {
   const { 
@@ -77,7 +79,15 @@ export const GameBoard: React.FC = () => {
             return (
               <div
                 key={rc.role}
-                onClick={() => canSelect && selectRole(rc.role)}
+                onClick={(e) => {
+                  if (!canSelect) return;
+                  soundManager.playParchment();
+                  if (rc.doubloons > 0) {
+                    setTimeout(() => soundManager.playCoin(), 120);
+                    showFeedback(`+${rc.doubloons} 🪙`, e.clientX, e.clientY);
+                  }
+                  selectRole(rc.role);
+                }}
                 className={isTabletop && !isSelected ? 'tabletop-role-tile' : undefined}
                 style={{
                   position: 'relative',

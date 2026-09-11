@@ -5,16 +5,45 @@ import { PlayerMat } from './components/PlayerMat';
 import { GameLog } from './components/GameLog';
 import { ActionModal } from './components/ActionModal';
 import { GameOverModal } from './components/GameOverModal';
-import { ArrowLeft, RotateCcw, HelpCircle } from 'lucide-react';
+import { ArrowLeft, RotateCcw, HelpCircle, Volume2, VolumeX } from 'lucide-react';
+import { soundManager } from '../../utils/sound';
+import { subscribeFeedback } from '../../utils/feedback';
 
 interface PuertoRicoGameProps {
   onBackToLobby: () => void;
+}
+
+interface FeedbackItem {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
 }
 
 export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby }) => {
   const { round, playMode, roomCode, myPlayerId, players, currentTurnPlayerIndex, initGame, uiTheme, toggleUITheme } = usePuertoRicoStore();
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+
+  React.useEffect(() => {
+    const unsubscribe = subscribeFeedback((item) => {
+      setFeedbacks((prev) => [...prev, item]);
+      setTimeout(() => {
+        setFeedbacks((prev) => prev.filter((f) => f.id !== item.id));
+      }, 1200);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleToggleMute = () => {
+    const muted = soundManager.toggleMute();
+    setIsMuted(muted);
+    if (!muted) {
+      soundManager.playCoin();
+    }
+  };
 
   const currTurnPlayer = players[currentTurnPlayerIndex];
   const isMyTurn = playMode !== 'online' || currTurnPlayer?.id === myPlayerId;
@@ -121,17 +150,32 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
 
           <button 
             className="btn-secondary" 
-            onClick={() => setShowRulesModal(true)}
+            onClick={() => {
+              soundManager.playClick();
+              setShowRulesModal(true);
+            }}
             style={{ padding: '6px 10px', fontSize: '0.78rem' }}
           >
             <HelpCircle size={14} color="var(--gold-secondary)" /> 규칙
           </button>
           <button 
             className="btn-secondary" 
-            onClick={() => initGame(3, true)}
+            onClick={() => {
+              soundManager.playClick();
+              initGame(3, true);
+            }}
             style={{ padding: '6px 10px', fontSize: '0.78rem' }}
           >
             <RotateCcw size={14} /> 재시작
+          </button>
+
+          {/* 사운드 On/Off 토글 버튼 */}
+          <button
+            className={`sound-toggle-btn ${!isMuted ? 'active' : ''}`}
+            onClick={handleToggleMute}
+            title={isMuted ? '소리 켜기' : '음소거'}
+          >
+            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
         </div>
       </header>
@@ -233,6 +277,17 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
           </div>
         </div>
       )}
+
+      {/* 플로팅 인터랙션 피드백 오버레이 */}
+      {feedbacks.map((f) => (
+        <div
+          key={f.id}
+          className="floating-feedback-item font-serif"
+          style={{ left: f.x, top: f.y }}
+        >
+          {f.text}
+        </div>
+      ))}
 
     </div>
   );

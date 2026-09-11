@@ -360,3 +360,88 @@ body {
     font-size: 0.82rem !important;
   }
 }
+
+/* Floating Action Feedback Animation */
+@keyframes floatUpFade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -24px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -46px) scale(1);
+  }
+}
+
+.floating-feedback-item {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  animation: floatUpFade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid var(--gold-primary);
+  color: #ffd700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(245, 158, 11, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.sound-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--amber-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sound-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--gold-secondary);
+}
+.sound-toggle-btn.active {
+  color: #fbbf24;
+  border-color: #f59e0b;
+}
+
+/* Custom Building Tooltip */
+.building-card-tooltip {
+  position: relative;
+}
+.building-card-tooltip:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+.tooltip-content {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  width: 220px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--gold-secondary);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+  color: #f8fafc;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  z-index: 100;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
