@@ -27,14 +27,31 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
   const selectedTile = (isCurrentPlayer && selectedKeySlotIndex !== null) ? player.keySlots[selectedKeySlotIndex] : null;
   const dieValue = (isCurrentPlayer && selectedDieIndex !== null && !player.usedDice[selectedDieIndex]) ? player.dice[selectedDieIndex] : null;
 
+  // 카테고리별 배치 현황 집계 (성, 건물, 목장, 선박, 광산, 수도원)
+  const categoryStats: Record<TileCategory, { placed: number; total: number }> = {
+    castle: { placed: 0, total: 0 },
+    city: { placed: 0, total: 0 },
+    pasture: { placed: 0, total: 0 },
+    ship: { placed: 0, total: 0 },
+    mine: { placed: 0, total: 0 },
+    monastery: { placed: 0, total: 0 }
+  };
+
+  player.duchy.forEach(slot => {
+    if (categoryStats[slot.category]) {
+      categoryStats[slot.category].total++;
+      if (slot.placedTile) categoryStats[slot.category].placed++;
+    }
+  });
+
   return (
-    <div className="saboteur-board-panel" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+    <div className="saboteur-board-panel" style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
       
       {/* 1. 영지 헤더 바 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '8px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212, 175, 55, 0.15)', paddingBottom: '6px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ color: '#d4af37', fontSize: '0.8rem' }}>●</span>
-          <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
+          <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
             {player.name}의 영지 (DUCHY)
           </span>
           {isCurrentPlayer && (
@@ -42,7 +59,7 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
               background: 'rgba(212, 175, 55, 0.15)', 
               color: '#facc15', 
               border: '1px solid #d4af37', 
-              fontSize: '0.68rem', 
+              fontSize: '0.65rem', 
               padding: '1px 6px', 
               borderRadius: '4px',
               fontWeight: 700 
@@ -58,7 +75,7 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
             border: '1px solid rgba(212, 175, 55, 0.3)', 
             borderRadius: '4px', 
             padding: '2px 8px', 
-            fontSize: '0.75rem', 
+            fontSize: '0.72rem', 
             color: '#facc15',
             fontWeight: 800
           }}>
@@ -67,21 +84,67 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
         </div>
       </div>
 
-      {/* 2. 대형 반응형 37칸 육각 벌집 맵 (원점 기준 타이트 뷰박스로 패널 공간 100% 최적 활용) */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 0, padding: '4px', width: '100%', height: '100%' }}>
-        <svg 
-          viewBox="-250 -235 500 470" 
-          preserveAspectRatio="xMidYMid meet" 
-          style={{ width: '100%', height: '100%', maxHeight: '100%', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.75))' }}
-        >
-          <defs>
-            <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.85" />
-            </filter>
-            <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#facc15" floodOpacity="0.9" />
-            </filter>
-          </defs>
+      {/* 2. 대형 반응형 37칸 육각 벌집 맵 + 좌우 보드게임 날개 정보 패널 */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', minHeight: 0, padding: '2px 0', width: '100%', height: '100%', overflow: 'hidden' }}>
+        
+        {/* [좌측 날개]: 영지 건설 현황 요약 패널 */}
+        <div style={{
+          width: '74px',
+          flexShrink: 0,
+          background: 'rgba(10, 15, 12, 0.75)',
+          border: '1px solid rgba(212, 175, 55, 0.18)',
+          borderRadius: '6px',
+          padding: '6px 4px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '5px',
+          boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.6)'
+        }}>
+          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#d4af37', textAlign: 'center', letterSpacing: '0.3px', borderBottom: '1px solid rgba(212,175,55,0.15)', paddingBottom: '3px' }}>
+            건설 현황
+          </div>
+          {(Object.keys(CATEGORY_COLORS) as TileCategory[]).map(cat => {
+            const meta = CATEGORY_COLORS[cat];
+            const stat = categoryStats[cat];
+            return (
+              <div 
+                key={cat}
+                title={`${meta.label}: ${stat.placed}/${stat.total} 배치됨`}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: meta.bg,
+                  border: `1px solid ${meta.border}55`,
+                  borderRadius: '3px',
+                  padding: '2px 4px',
+                  fontSize: '0.62rem'
+                }}
+              >
+                <span style={{ color: meta.text, fontWeight: 700 }}>{meta.label}</span>
+                <span style={{ color: '#fff', fontWeight: 800, fontSize: '0.65rem' }}>
+                  {stat.placed}/{stat.total}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* [중앙]: 37칸 육각 벌집 맵 */}
+        <div style={{ flex: 1, height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 0 }}>
+          <svg 
+            viewBox="-250 -235 500 470" 
+            preserveAspectRatio="xMidYMid meet" 
+            style={{ width: '100%', height: '100%', maxHeight: '100%', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.75))' }}
+          >
+            <defs>
+              <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.85" />
+              </filter>
+              <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#facc15" floodOpacity="0.9" />
+              </filter>
+            </defs>
 
           {player.duchy.map((slot) => {
             const x = R * Math.sqrt(3) * (slot.q + slot.r / 2);
@@ -183,10 +246,54 @@ export const DuchyBoard: React.FC<DuchyBoardProps> = ({ player, isCurrentPlayer 
             );
           })}
         </svg>
+        </div>
+
+        {/* [우측 날개]: 구역 완성 점수표 패널 */}
+        <div style={{
+          width: '74px',
+          flexShrink: 0,
+          background: 'rgba(10, 15, 12, 0.75)',
+          border: '1px solid rgba(212, 175, 55, 0.18)',
+          borderRadius: '6px',
+          padding: '6px 4px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.6)'
+        }}>
+          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#d4af37', textAlign: 'center', letterSpacing: '0.3px', borderBottom: '1px solid rgba(212,175,55,0.15)', paddingBottom: '3px' }}>
+            구역 점수
+          </div>
+          {[
+            { size: 1, vp: 1 },
+            { size: 2, vp: 3 },
+            { size: 3, vp: 6 },
+            { size: 4, vp: 10 },
+            { size: 5, vp: 15 },
+            { size: 8, vp: 36 }
+          ].map(row => (
+            <div 
+              key={row.size}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'rgba(255,255,255,0.04)',
+                borderRadius: '3px',
+                padding: '2px 4px',
+                fontSize: '0.62rem'
+              }}
+            >
+              <span style={{ color: '#94a3b8' }}>{row.size}칸</span>
+              <span style={{ color: '#facc15', fontWeight: 800, fontSize: '0.65rem' }}>+{row.vp} VP</span>
+            </div>
+          ))}
+        </div>
+
       </div>
 
       {/* 영지 안내 한 줄 */}
-      <div style={{ textAlign: 'center', fontSize: '0.72rem', color: selectedTile ? '#facc15' : '#94a3b8' }}>
+      <div style={{ textAlign: 'center', fontSize: '0.7rem', color: selectedTile ? '#facc15' : '#94a3b8', flexShrink: 0, paddingTop: '2px' }}>
         {selectedTile 
           ? `👉 [${selectedTile.name}] 배치: 위 육각 맵의 노란색 슬롯을 클릭하세요.`
           : '성, 건물, 목장, 선박, 광산, 수도원을 조화롭게 배치하여 영지를 발전시키세요.'}
