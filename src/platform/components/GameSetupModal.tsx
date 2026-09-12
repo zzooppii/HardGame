@@ -596,14 +596,14 @@ export const GameSetupModal: React.FC<GameSetupModalProps> = ({
       useTMStore.getState().initGame(playerCount, activeTab === 'solo', aiDifficulty);
     } else if (gameTitle.includes('아르낙')) {
       useArnakStore.getState().initGame(playerCount, activeTab === 'solo');
-    } else if (gameTitle.includes('카베르나')) {
+    } else if (gameTitle === '카베르나') {
       useCavernaStore.getState().initGame(playerCount, activeTab === 'solo');
     } else if (gameTitle === '르아브르') {
       useLeHavreStore.getState().initGame(playerCount, activeTab === 'solo');
     } else if (gameTitle === '버건디의 성') {
       useBurgundyStore.getState().initGame(playerCount, activeTab === 'solo', aiDifficulty);
     } else {
-      initGame(playerCount, activeTab === 'solo');
+      initGame(playerCount, activeTab === 'solo', aiDifficulty);
     }
     onStartGame();
   };

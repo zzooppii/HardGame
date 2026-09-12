@@ -81,6 +81,8 @@ export interface ActionLogEntry {
   timestamp: string;
 }
 
+export type AIDifficulty = 'easy' | 'normal' | 'hard';
+
 export interface PuertoRicoGameState {
   players: PlayerState[];
   governorIndex: number;
@@ -88,6 +90,7 @@ export interface PuertoRicoGameState {
   currentRole: RoleType | null;
   roleCards: RoleCardState[];
   round: number;
+  aiDifficulty: AIDifficulty;
   
   // 공용 공급처
   plantationMarket: PlantationType[];

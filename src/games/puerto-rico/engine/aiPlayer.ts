@@ -1,4 +1,5 @@
 import type { 
+  AIDifficulty,
   GoodType, 
   PlantationType, 
   PlayerState, 
@@ -10,14 +11,26 @@ import { calculateBuildingCost, calculateProduction, hasBuilding } from './gameL
 
 export class PuertoRicoAI {
   /**
-   * AI가 역할을 선택합니다.
+   * AI가 역할을 선택합니다. 난이도(easy, normal, hard)에 따라 지능이 달라집니다.
    */
-  static selectRole(state: PuertoRicoGameState, aiPlayer: PlayerState): RoleType {
+  static selectRole(
+    state: PuertoRicoGameState, 
+    aiPlayer: PlayerState, 
+    difficulty: AIDifficulty = 'normal'
+  ): RoleType {
     const availableRoles = state.roleCards
       .filter(rc => rc.selectedByPlayerId === null)
       .map(rc => rc.role);
 
     if (availableRoles.length === 0) return 'settler';
+
+    // 초보 난이도: 40% 확률로 단순 선호나 무작위 선택(초보적 실수)
+    if (difficulty === 'easy') {
+      if (Math.random() < 0.4) {
+        const randomRole = availableRoles[Math.floor(Math.random() * availableRoles.length)];
+        return randomRole;
+      }
+    }
 
     // 1. 각 역할별 점수 평가
     let bestRole = availableRoles[0];
@@ -33,7 +46,6 @@ export class PuertoRicoAI {
 
       switch (role) {
         case 'trader': {
-          // 상점에 팔 수 있는 상품이 있는지
           const sellableGoods = (['coffee', 'tobacco', 'sugar', 'indigo', 'corn'] as GoodType[]).filter(g => {
             if (aiPlayer.goods[g] <= 0) return false;
             const officeActive = hasBuilding(aiPlayer, 'office');
@@ -48,7 +60,6 @@ export class PuertoRicoAI {
         }
 
         case 'captain': {
-          // 실을 수 있는 상품 수량
           if (totalGoods > 0) {
             score += totalGoods * 2 + 3;
           }
@@ -62,7 +73,6 @@ export class PuertoRicoAI {
         }
 
         case 'builder': {
-          // 살 수 있는 좋은 건물이 있는지
           const affordableBuildings = BUILDINGS_CATALOG.filter(b => {
             if (aiPlayer.buildings.some(pb => pb.buildingId === b.id)) return false;
             const cost = calculateBuildingCost(b, aiPlayer, true);
@@ -85,7 +95,6 @@ export class PuertoRicoAI {
         case 'settler': {
           if (aiPlayer.plantations.length < 12) {
             score += 3;
-            // 채석장을 고를 수 있다면 추가점
             if (state.quarrySupply > 0) score += 2;
           }
           break;
@@ -95,6 +104,13 @@ export class PuertoRicoAI {
           score += 3;
           break;
         }
+      }
+
+      // 초보/중급 난이도 노이즈 주입
+      if (difficulty === 'easy') {
+        score += (Math.random() - 0.5) * 14;
+      } else if (difficulty === 'normal') {
+        score += (Math.random() - 0.5) * 4;
       }
 
       if (score > maxScore) {
@@ -112,13 +128,26 @@ export class PuertoRicoAI {
   static choosePlantation(
     state: PuertoRicoGameState, 
     aiPlayer: PlayerState, 
-    canTakeQuarry: boolean
+    canTakeQuarry: boolean,
+    difficulty: AIDifficulty = 'normal'
   ): PlantationType | null {
     if (aiPlayer.plantations.length >= 12) return null;
 
-    // 채석장이 유리한 경우 (채석장 공급이 있고 현재 채석장 3개 미만)
+    // 초보 난이도: 채석장의 중요성을 모르고 75% 확률로 눈앞의 아무 농장이나 가져감
+    if (difficulty === 'easy') {
+      if (canTakeQuarry && state.quarrySupply > 0 && Math.random() < 0.25) {
+        return 'quarry';
+      }
+      if (state.plantationMarket.length > 0) {
+        const randomIdx = Math.floor(Math.random() * state.plantationMarket.length);
+        return state.plantationMarket[randomIdx];
+      }
+    }
+
+    // 보통/어려움 난이도: 채석장 우선
     const currentQuarries = aiPlayer.plantations.filter(p => p.type === 'quarry').length;
-    if (canTakeQuarry && state.quarrySupply > 0 && currentQuarries < 3) {
+    const maxQuarries = difficulty === 'hard' ? 3 : 2;
+    if (canTakeQuarry && state.quarrySupply > 0 && currentQuarries < maxQuarries) {
       return 'quarry';
     }
 
@@ -139,12 +168,17 @@ export class PuertoRicoAI {
   static chooseBuilding(
     _state: PuertoRicoGameState, 
     aiPlayer: PlayerState, 
-    hasPrivilege: boolean
+    hasPrivilege: boolean,
+    difficulty: AIDifficulty = 'normal'
   ): string | null {
     if (aiPlayer.buildings.length >= 12) return null;
 
+    // 초보 난이도: 25% 확률로 돈이 있어도 패스
+    if (difficulty === 'easy' && Math.random() < 0.25) {
+      return null;
+    }
+
     const affordable = BUILDINGS_CATALOG.filter(b => {
-      // 이미 지은 건물 제외
       if (aiPlayer.buildings.some(pb => pb.buildingId === b.id)) return false;
       const cost = calculateBuildingCost(b, aiPlayer, hasPrivilege);
       return cost <= aiPlayer.doubloons;
@@ -152,10 +186,14 @@ export class PuertoRicoAI {
 
     if (affordable.length === 0) return null;
 
-    // 생산 시설이 필요한 작물 보유 여부 확인
+    // 초보 난이도: 생산 시설 매칭을 생각 못하고 가장 저렴한 1~2원짜리 건물을 충동 구매
+    if (difficulty === 'easy') {
+      affordable.sort((a, b) => a.cost - b.cost);
+      return affordable[0].id;
+    }
+
     const plantTypes = aiPlayer.plantations.map(p => p.type);
 
-    // AI 건물 선호도 점수화
     affordable.sort((a, b) => {
       let scoreA = a.vp;
       let scoreB = b.vp;
@@ -169,8 +207,10 @@ export class PuertoRicoAI {
       if (['small_market', 'office', 'harbor', 'factory'].includes(b.id)) scoreB += 3;
 
       // 대형 승점 건물 가산점
-      if (a.category === 'large') scoreA += 6;
-      if (b.category === 'large') scoreB += 6;
+      if (difficulty === 'hard') {
+        if (a.category === 'large') scoreA += 6;
+        if (b.category === 'large') scoreB += 6;
+      }
 
       return scoreB - scoreA;
     });
@@ -181,11 +221,28 @@ export class PuertoRicoAI {
   /**
    * 상인: 판매할 상품 선택
    */
-  static chooseGoodToTrade(state: PuertoRicoGameState, aiPlayer: PlayerState): GoodType | null {
+  static chooseGoodToTrade(
+    state: PuertoRicoGameState, 
+    aiPlayer: PlayerState,
+    difficulty: AIDifficulty = 'normal'
+  ): GoodType | null {
     if (state.tradingHouse.length >= 4) return null;
     const officeActive = hasBuilding(aiPlayer, 'office');
 
-    // 비싼 상품 순으로 정렬
+    // 초보 난이도: 가장 싼 옥수수나 인디고를 먼저 팔아버리는 실수!
+    if (difficulty === 'easy') {
+      const cheapOrder: GoodType[] = ['corn', 'indigo', 'sugar', 'tobacco', 'coffee'];
+      for (const g of cheapOrder) {
+        if (aiPlayer.goods[g] > 0) {
+          if (officeActive || !state.tradingHouse.includes(g)) {
+            return g;
+          }
+        }
+      }
+      return null;
+    }
+
+    // 보통/어려움: 비싼 상품 순으로 정렬
     const goodsInOrder: GoodType[] = ['coffee', 'tobacco', 'sugar', 'indigo', 'corn'];
     for (const g of goodsInOrder) {
       if (aiPlayer.goods[g] > 0) {
@@ -202,10 +259,14 @@ export class PuertoRicoAI {
    */
   static chooseShippingAction(
     state: PuertoRicoGameState, 
-    aiPlayer: PlayerState
+    aiPlayer: PlayerState,
+    difficulty: AIDifficulty = 'normal'
   ): { shipIndex: number; goodType: GoodType } | null {
-    // 플레이어가 가진 상품 중 선적 가능한 조합 찾기
-    for (const good of (['corn', 'sugar', 'tobacco', 'coffee', 'indigo'] as GoodType[])) {
+    const goodsOrder: GoodType[] = difficulty === 'easy'
+      ? ['corn', 'indigo', 'sugar', 'tobacco', 'coffee'] // 초보는 저가 작물부터 비효율적으로 선적
+      : ['coffee', 'tobacco', 'sugar', 'indigo', 'corn'];
+
+    for (const good of goodsOrder) {
       if (aiPlayer.goods[good] <= 0) continue;
 
       for (let i = 0; i < state.cargoShips.length; i++) {
@@ -224,9 +285,12 @@ export class PuertoRicoAI {
   }
 
   /**
-   * 시장: 일꾼 최적 자동 배치
+   * 시장: 일꾼 최적 자동 배치 (난이도에 따라 실수 발생)
    */
-  static autoAssignColonists(player: PlayerState): {
+  static autoAssignColonists(
+    player: PlayerState,
+    difficulty: AIDifficulty = 'normal'
+  ): {
     plantations: { id: string; hasColonist: boolean }[];
     buildings: { buildingId: string; colonists: number }[];
     unassigned: number;
@@ -235,9 +299,29 @@ export class PuertoRicoAI {
       player.plantations.filter(p => p.hasColonist).length + 
       player.buildings.reduce((sum, b) => sum + b.colonists, 0);
 
-    // 초기화
     const newPlantations = player.plantations.map(p => ({ id: p.id, hasColonist: false }));
     const newBuildings = player.buildings.map(b => ({ buildingId: b.buildingId, colonists: 0 }));
+
+    // 초보 난이도: 1:1 완벽 페어링을 못하고 농장에만 일꾼을 채우고 공장을 비워두는 실수
+    if (difficulty === 'easy') {
+      for (let i = 0; i < player.plantations.length; i++) {
+        if (pool > 0) {
+          newPlantations[i].hasColonist = true;
+          pool--;
+        }
+      }
+      for (const b of newBuildings) {
+        if (pool > 0) {
+          b.colonists = 1;
+          pool--;
+        }
+      }
+      return {
+        plantations: newPlantations,
+        buildings: newBuildings,
+        unassigned: pool
+      };
+    }
 
     // 1. 옥수수 농장에 우선 배치 (공장 필요없이 즉시 생산 가능)
     for (let i = 0; i < player.plantations.length; i++) {
@@ -259,7 +343,6 @@ export class PuertoRicoAI {
     for (const b of newBuildings) {
       const def = BUILDINGS_CATALOG.find(x => x.id === b.buildingId);
       if (def && def.goodType) {
-        // 이 공장에 필요한 농장 수
         const matchingPlants = player.plantations
           .map((p, idx) => ({ ...p, originalIdx: idx }))
           .filter(p => p.type === def.goodType && !newPlantations[p.originalIdx].hasColonist);

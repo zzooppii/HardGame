@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { 
   ActionLogEntry, 
   ActionPhase, 
+  AIDifficulty,
   CargoShip, 
   GoodType, 
   PlantationTile, 
@@ -53,7 +54,7 @@ interface PuertoRicoStore extends PuertoRicoGameState {
 
   setShowBuildingMarketModal: (show: boolean) => void;
   toggleUITheme: () => void;
-  initGame: (playerCount?: number, soloVsAI?: boolean) => void;
+  initGame: (playerCount?: number, soloVsAI?: boolean, aiDifficulty?: AIDifficulty) => void;
   initOnlineGame: (
     playerCount: number, 
     humanPlayers: { name: string; peerId?: string }[], 
@@ -139,6 +140,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
   ],
 
   currentPhase: 'idle',
+  aiDifficulty: 'normal',
   playersCompletedAction: [],
   captainConsecutivePasses: 0,
   isGameOver: false,
@@ -172,7 +174,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     get().syncToPeers();
   },
 
-  initGame: (playerCount = 3, soloVsAI = true) => {
+  initGame: (playerCount = 3, soloVsAI = true, aiDifficulty: AIDifficulty = 'normal') => {
     const deck = generateInitialPlantationDeck();
     const marketSize = playerCount + 1;
     const market = deck.splice(0, marketSize);
@@ -229,6 +231,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       currentRole: null,
       roleCards,
       round: 1,
+      aiDifficulty,
       plantationMarket: market,
       plantationDrawPile: deck,
       quarrySupply: 8,
@@ -246,7 +249,8 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       actionLogs: []
     });
 
-    get().addLog(`⚓ 푸에르토리코 게임 시작! (${playerCount}인 모드)`, 'info');
+    const diffLabel = aiDifficulty === 'easy' ? '초급' : aiDifficulty === 'hard' ? '고급' : '중급';
+    get().addLog(`⚓ 푸에르토리코 게임 시작! (${playerCount}인 / AI 난이도: ${diffLabel})`, 'info');
     get().addLog(`👑 ${players[0].name}님이 첫 총독(Governor)입니다.`, 'role');
   },
 
@@ -1041,13 +1045,13 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
 
   triggerAITurn: () => {
     const state = get();
-    const { currentPhase, currentTurnPlayerIndex, players, roleCards } = state;
+    const { currentPhase, currentTurnPlayerIndex, players, roleCards, aiDifficulty } = state;
     const aiPlayer = players[currentTurnPlayerIndex];
 
     if (!aiPlayer || !aiPlayer.isAI || state.isGameOver) return;
 
     if (currentPhase === 'select_role') {
-      const chosenRole = PuertoRicoAI.selectRole(state, aiPlayer);
+      const chosenRole = PuertoRicoAI.selectRole(state, aiPlayer, aiDifficulty);
       get().selectRole(chosenRole);
       return;
     }
@@ -1056,7 +1060,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       const roleCard = roleCards.find(rc => rc.role === 'settler');
       const hasPrivilege = roleCard?.selectedByPlayerId === aiPlayer.id;
       const canQuarry = hasPrivilege || hasBuilding(aiPlayer, 'construction_hut');
-      const chosen = PuertoRicoAI.choosePlantation(state, aiPlayer, canQuarry);
+      const chosen = PuertoRicoAI.choosePlantation(state, aiPlayer, canQuarry, aiDifficulty);
 
       if (chosen) {
         get().executeSettler(chosen);
@@ -1067,7 +1071,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     }
 
     if (currentPhase === 'mayor_assign') {
-      const assignment = PuertoRicoAI.autoAssignColonists(aiPlayer);
+      const assignment = PuertoRicoAI.autoAssignColonists(aiPlayer, aiDifficulty);
       get().executeMayor(assignment);
       return;
     }
@@ -1075,7 +1079,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     if (currentPhase === 'builder_action') {
       const roleCard = roleCards.find(rc => rc.role === 'builder');
       const hasPrivilege = roleCard?.selectedByPlayerId === aiPlayer.id;
-      const buildingId = PuertoRicoAI.chooseBuilding(state, aiPlayer, hasPrivilege);
+      const buildingId = PuertoRicoAI.chooseBuilding(state, aiPlayer, hasPrivilege, aiDifficulty);
       get().executeBuilder(buildingId);
       return;
     }
@@ -1084,19 +1088,23 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       const prod = calculateProduction(aiPlayer);
       const producedGoods = (['coffee', 'tobacco', 'sugar', 'indigo', 'corn'] as GoodType[])
         .filter(g => prod[g] > 0 && state.goodsSupply[g] > 0);
-      const bonus = producedGoods[0] || undefined;
+      // 초보는 가끔 커피 대신 싼 작물을 보너스로 고르기도 함
+      let bonus = producedGoods[0] || undefined;
+      if (aiDifficulty === 'easy' && producedGoods.length > 1 && Math.random() < 0.6) {
+        bonus = producedGoods[producedGoods.length - 1];
+      }
       get().executeCraftsman(bonus);
       return;
     }
 
     if (currentPhase === 'trader_action') {
-      const good = PuertoRicoAI.chooseGoodToTrade(state, aiPlayer);
+      const good = PuertoRicoAI.chooseGoodToTrade(state, aiPlayer, aiDifficulty);
       get().executeTrader(good);
       return;
     }
 
     if (currentPhase === 'captain_action') {
-      const action = PuertoRicoAI.chooseShippingAction(state, aiPlayer);
+      const action = PuertoRicoAI.chooseShippingAction(state, aiPlayer, aiDifficulty);
       if (action) {
         get().executeCaptain(action.shipIndex, action.goodType);
       } else {
