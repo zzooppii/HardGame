@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePuertoRicoStore } from '../store/usePuertoRicoStore';
 import { calculateFinalScore } from '../engine/gameLogic';
 import confetti from 'canvas-confetti';
-import { RotateCcw, Home } from 'lucide-react';
+import { RotateCcw, Home, ChevronDown, ChevronUp, Award } from 'lucide-react';
 import { soundManager } from '../../../utils/sound';
 import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 
 export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onReturnToLobby }) => {
   const { isGameOver, endReason, players, initGame, myPlayerId } = usePuertoRicoStore();
+  const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isGameOver) {
@@ -46,6 +47,11 @@ export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onRet
         totalPlayers: players.length,
         maxScore: scoredPlayers[0]?.score.total || myResult.score.total
       });
+
+      // 기본적으로 1위 플레이어의 상세 점수를 펼쳐둠
+      if (scoredPlayers[0]) {
+        setExpandedPlayerId(scoredPlayers[0].player.id);
+      }
     }
   }, [isGameOver, myPlayerId, players]);
 
@@ -82,85 +88,182 @@ export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onRet
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 200,
-      padding: '20px'
+      zIndex: 400,
+      padding: '20px',
+      overflowY: 'auto'
     }}>
       <div 
         className="glass-panel" 
         style={{
           width: '100%',
-          maxWidth: '680px',
-          padding: '36px',
+          maxWidth: '740px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          padding: '32px 28px',
           background: 'linear-gradient(145deg, #1e2538 0%, #0d131f 100%)',
           border: '2px solid var(--gold-secondary)',
           boxShadow: '0 25px 50px rgba(0,0,0,0.9), 0 0 40px rgba(229, 169, 60, 0.3)',
           textAlign: 'center'
         }}
       >
-        <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>🏆</div>
-        <h2 className="font-serif text-gold-gradient" style={{ fontSize: '2rem', marginBottom: '6px' }}>
+        <div style={{ fontSize: '3.2rem', marginBottom: '4px' }}>🏆</div>
+        <h2 className="font-serif text-gold-gradient" style={{ fontSize: '1.9rem', marginBottom: '4px' }}>
           게임 종료!
         </h2>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-          종료 사유: {endReason}
+        <p style={{ fontSize: '0.88rem', color: '#cbd5e1', marginBottom: '20px' }}>
+          📌 종료 사유: <b style={{ color: 'var(--gold-secondary)' }}>{endReason}</b>
         </p>
 
         {/* 1위 우승자 배너 */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(229, 169, 60, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%)',
+          background: 'linear-gradient(135deg, rgba(229, 169, 60, 0.22) 0%, rgba(245, 158, 11, 0.08) 100%)',
           border: '1.5px solid var(--gold-primary)',
           borderRadius: '12px',
-          padding: '16px',
-          marginBottom: '24px'
+          padding: '14px',
+          marginBottom: '20px'
         }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--gold-secondary)', fontWeight: 600 }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--gold-secondary)', fontWeight: 700 }}>
             최고의 식민지 총독 (1위 우승)
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', margin: '4px 0' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#fff', margin: '4px 0' }}>
             {winner.player.name}
           </div>
-          <div style={{ fontSize: '1.1rem', color: 'var(--gold-primary)', fontWeight: 700 }}>
+          <div style={{ fontSize: '1.1rem', color: 'var(--gold-primary)', fontWeight: 800 }}>
             총 {winner.score.total} 승점 (VP)
           </div>
         </div>
 
-        {/* 점수 종합표 */}
-        <div style={{ marginBottom: '28px', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+        {/* 점수 종합 순위표 */}
+        <div style={{ marginBottom: '20px', overflowX: 'auto', background: 'rgba(0,0,0,0.25)', borderRadius: '8px', padding: '8px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '8px', textAlign: 'left' }}>순위</th>
-                <th style={{ padding: '8px', textAlign: 'left' }}>플레이어</th>
-                <th style={{ padding: '8px' }}>VP 칩</th>
-                <th style={{ padding: '8px' }}>건물 기본</th>
-                <th style={{ padding: '8px' }}>대형 보너스</th>
-                <th style={{ padding: '8px', textAlign: 'right' }}>최종 점수</th>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-muted)' }}>
+                <th style={{ padding: '8px 6px', textAlign: 'left' }}>순위</th>
+                <th style={{ padding: '8px 6px', textAlign: 'left' }}>플레이어</th>
+                <th style={{ padding: '8px 6px' }}>VP 칩</th>
+                <th style={{ padding: '8px 6px' }}>건물 점수</th>
+                <th style={{ padding: '8px 6px' }}>대형 보너스</th>
+                <th style={{ padding: '8px 6px', textAlign: 'right' }}>최종 점수</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center' }}>상세</th>
               </tr>
             </thead>
             <tbody>
-              {scoredPlayers.map((item, idx) => (
-                <tr 
-                  key={item.player.id}
-                  style={{ 
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    background: idx === 0 ? 'rgba(229, 169, 60, 0.1)' : 'transparent'
-                  }}
-                >
-                  <td style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 700, color: idx === 0 ? 'var(--gold-primary)' : 'inherit' }}>
-                    #{idx + 1}
-                  </td>
-                  <td style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 600 }}>
-                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: item.player.color, marginRight: '6px' }} />
-                    {item.player.name}
-                  </td>
-                  <td style={{ padding: '10px 8px' }}>{item.score.breakdown.vpChips}점</td>
-                  <td style={{ padding: '10px 8px' }}>{item.score.breakdown.buildings}점</td>
-                  <td style={{ padding: '10px 8px' }}>+{item.score.breakdown.bonus}점</td>
-                  <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, color: 'var(--gold-secondary)', fontSize: '1rem' }}>
-                    {item.score.total} VP
-                  </td>
-                </tr>
-              ))}
+              {scoredPlayers.map((item, idx) => {
+                const isExpanded = expandedPlayerId === item.player.id;
+
+                return (
+                  <React.Fragment key={item.player.id}>
+                    <tr 
+                      onClick={() => setExpandedPlayerId(isExpanded ? null : item.player.id)}
+                      style={{ 
+                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        background: idx === 0 ? 'rgba(229, 169, 60, 0.12)' : 'transparent',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <td style={{ padding: '9px 6px', textAlign: 'left', fontWeight: 800, color: idx === 0 ? 'var(--gold-primary)' : 'inherit' }}>
+                        #{idx + 1}
+                      </td>
+                      <td style={{ padding: '9px 6px', textAlign: 'left', fontWeight: 700 }}>
+                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: item.player.color, marginRight: '6px' }} />
+                        {item.player.name}
+                      </td>
+                      <td style={{ padding: '9px 6px', color: '#38bdf8', fontWeight: 700 }}>{item.score.breakdown.vpChips}점</td>
+                      <td style={{ padding: '9px 6px' }}>{item.score.breakdown.buildings}점</td>
+                      <td style={{ padding: '9px 6px', color: '#a855f7', fontWeight: 700 }}>+{item.score.breakdown.bonus}점</td>
+                      <td style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 900, color: 'var(--gold-secondary)', fontSize: '1rem' }}>
+                        {item.score.total} VP
+                      </td>
+                      <td style={{ padding: '9px 6px', textAlign: 'center', color: 'var(--gold-secondary)' }}>
+                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </td>
+                    </tr>
+
+                    {/* 펼쳐지는 세부 점수 분석 카드 */}
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={7} style={{ padding: '12px 14px', background: 'rgba(0,0,0,0.4)', textAlign: 'left' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8rem' }}>
+                            
+                            {/* 1. 건물별 점수 내역 */}
+                            <div>
+                              <div style={{ fontWeight: 800, color: '#fde047', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Award size={14} /> 건설한 건물 상세 내역 ({item.score.breakdown.buildingDetails.length}채, 총 {item.score.breakdown.buildings}점):
+                              </div>
+                              {item.score.breakdown.buildingDetails.length === 0 ? (
+                                <div style={{ color: '#94a3b8', paddingLeft: '8px' }}>건설된 건물이 없습니다.</div>
+                              ) : (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                  {item.score.breakdown.buildingDetails.map((b, bIdx) => (
+                                    <div 
+                                      key={bIdx}
+                                      style={{
+                                        background: 'rgba(255,255,255,0.06)',
+                                        border: b.active ? '1px solid #22c55e' : '1px dashed #64748b',
+                                        borderRadius: '6px',
+                                        padding: '3px 8px',
+                                        fontSize: '0.74rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px'
+                                      }}
+                                    >
+                                      <span style={{ color: '#fff', fontWeight: 600 }}>{b.name}</span>
+                                      <span style={{ color: '#fde047', fontWeight: 800 }}>({b.vp}점)</span>
+                                      <span style={{ fontSize: '0.65rem', color: b.active ? '#86efac' : '#f87171' }}>
+                                        {b.active ? `● 가동(${b.colonists})` : '○ 미가동'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 2. 대형 건물 보너스 점수 상세 내역 */}
+                            <div>
+                              <div style={{ fontWeight: 800, color: '#c084fc', marginBottom: '6px' }}>
+                                🌟 대형 건물 보너스 점수 (+{item.score.breakdown.bonus}점):
+                              </div>
+                              {item.score.breakdown.bonusDetails.length === 0 ? (
+                                <div style={{ color: '#94a3b8', paddingLeft: '8px' }}>대형 건물이 없거나 활성화되지 않았습니다.</div>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  {item.score.breakdown.bonusDetails.map((bon, bonIdx) => (
+                                    <div 
+                                      key={bonIdx}
+                                      style={{
+                                        background: 'rgba(168, 85, 247, 0.1)',
+                                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                                        borderRadius: '6px',
+                                        padding: '4px 8px',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                      }}
+                                    >
+                                      <div>
+                                        <b style={{ color: '#e9d5ff' }}>{bon.name}</b>
+                                        <span style={{ color: '#cbd5e1', marginLeft: '8px' }}>{bon.desc}</span>
+                                      </div>
+                                      <span style={{ color: '#facc15', fontWeight: 800 }}>+{bon.bonusVp}점</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 3. 동점 기준 타이브레이커 자산 */}
+                            <div style={{ color: '#94a3b8', fontSize: '0.74rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '6px' }}>
+                              ⚖️ 동점 기준 자산: 잔여 {item.score.breakdown.tiebreaker.doubloons} 두블론 + 상품 {item.score.breakdown.tiebreaker.goods}개 = 총 <b>{item.score.breakdown.tiebreaker.total}개</b>
+                            </div>
+
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

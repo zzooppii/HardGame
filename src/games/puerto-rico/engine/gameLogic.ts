@@ -45,33 +45,76 @@ export function calculateProduction(player: PlayerState): Record<GoodType, numbe
   return { corn, indigo, sugar, tobacco, coffee };
 }
 
-export function calculateFinalScore(player: PlayerState): { total: number; breakdown: { vpChips: number; buildings: number; bonus: number } } {
+export interface ScoreBreakdown {
+  vpChips: number;
+  buildings: number;
+  bonus: number;
+  buildingDetails: { id: string; name: string; vp: number; colonists: number; active: boolean }[];
+  bonusDetails: { name: string; bonusVp: number; desc: string }[];
+  tiebreaker: { doubloons: number; goods: number; total: number };
+}
+
+export function calculateFinalScore(player: PlayerState): { total: number; breakdown: ScoreBreakdown } {
   const vpChips = player.vpChips;
   
   let buildingVp = 0;
+  const buildingDetails: ScoreBreakdown['buildingDetails'] = [];
+
   player.buildings.forEach(pb => {
     const def = BUILDINGS_CATALOG.find(b => b.id === pb.buildingId);
-    if (def) buildingVp += def.vp;
+    if (def) {
+      buildingVp += def.vp;
+      buildingDetails.push({
+        id: def.id,
+        name: def.koreanName,
+        vp: def.vp,
+        colonists: pb.colonists,
+        active: pb.colonists > 0
+      });
+    }
   });
 
   // 대형 건물 보너스 점수 (일꾼이 배치되어 활성화된 상태여야 함)
   let bonus = 0;
+  const bonusDetails: ScoreBreakdown['bonusDetails'] = [];
 
   // 1. Guild Hall: 소형 생산건물당 1점, 대형 생산건물당 2점
   if (hasBuilding(player, 'guild_hall')) {
+    let ghBonus = 0;
+    let smallCount = 0;
+    let largeCount = 0;
     player.buildings.forEach(pb => {
-      if (['small_indigo', 'small_sugar'].includes(pb.buildingId)) bonus += 1;
-      if (['large_indigo', 'large_sugar', 'tobacco_storage', 'coffee_roaster'].includes(pb.buildingId)) bonus += 2;
+      if (['small_indigo', 'small_sugar'].includes(pb.buildingId)) {
+        ghBonus += 1;
+        smallCount++;
+      }
+      if (['large_indigo', 'large_sugar', 'tobacco_storage', 'coffee_roaster'].includes(pb.buildingId)) {
+        ghBonus += 2;
+        largeCount++;
+      }
+    });
+    bonus += ghBonus;
+    bonusDetails.push({
+      name: '길드홀 (Guild Hall)',
+      bonusVp: ghBonus,
+      desc: `소형 생산(${smallCount}채×1) + 대형 생산(${largeCount}채×2) = +${ghBonus} VP`
     });
   }
 
   // 2. Residence: 9개 이하=4, 10개=5, 11개=6, 12개=7
   if (hasBuilding(player, 'residence')) {
     const count = player.plantations.length;
-    if (count <= 9) bonus += 4;
-    else if (count === 10) bonus += 5;
-    else if (count === 11) bonus += 6;
-    else if (count >= 12) bonus += 7;
+    let resBonus = 4;
+    if (count <= 9) resBonus = 4;
+    else if (count === 10) resBonus = 5;
+    else if (count === 11) resBonus = 6;
+    else if (count >= 12) resBonus = 7;
+    bonus += resBonus;
+    bonusDetails.push({
+      name: '총독 관저 (Residence)',
+      bonusVp: resBonus,
+      desc: `보유 농장/채석장 ${count}개 = +${resBonus} VP`
+    });
   }
 
   // 3. Fortress: 일꾼 3명당 1점
@@ -79,28 +122,56 @@ export function calculateFinalScore(player: PlayerState): { total: number; break
     const totalColonists = player.unassignedColonists + 
       player.plantations.filter(p => p.hasColonist).length + 
       player.buildings.reduce((sum, b) => sum + b.colonists, 0);
-    bonus += Math.floor(totalColonists / 3);
+    const fortBonus = Math.floor(totalColonists / 3);
+    bonus += fortBonus;
+    bonusDetails.push({
+      name: '요새 (Fortress)',
+      bonusVp: fortBonus,
+      desc: `총 일꾼 ${totalColonists}명 (3명당 1점) = +${fortBonus} VP`
+    });
   }
 
   // 4. Customs House: VP 칩 4개당 1점
   if (hasBuilding(player, 'customs_house')) {
-    bonus += Math.floor(player.vpChips / 4);
+    const chBonus = Math.floor(player.vpChips / 4);
+    bonus += chBonus;
+    bonusDetails.push({
+      name: '세관 (Customs House)',
+      bonusVp: chBonus,
+      desc: `획득 VP 칩 ${player.vpChips}개 (4개당 1점) = +${chBonus} VP`
+    });
   }
 
   // 5. City Hall: 보라색 건물당 1점 (대형 건물 제외한 violet 건물)
   if (hasBuilding(player, 'city_hall')) {
+    let violetCount = 0;
     player.buildings.forEach(pb => {
       const def = BUILDINGS_CATALOG.find(b => b.id === pb.buildingId);
-      if (def && def.category === 'violet') bonus += 1;
+      if (def && def.category === 'violet') violetCount += 1;
+    });
+    bonus += violetCount;
+    bonusDetails.push({
+      name: '시청 (City Hall)',
+      bonusVp: violetCount,
+      desc: `보라색 특수 건물 ${violetCount}채 = +${violetCount} VP`
     });
   }
+
+  const goodsTotal = Object.values(player.goods).reduce((x, y) => x + y, 0);
 
   return {
     total: vpChips + buildingVp + bonus,
     breakdown: {
       vpChips,
       buildings: buildingVp,
-      bonus
+      bonus,
+      buildingDetails,
+      bonusDetails,
+      tiebreaker: {
+        doubloons: player.doubloons,
+        goods: goodsTotal,
+        total: player.doubloons + goodsTotal
+      }
     }
   };
 }

@@ -59,8 +59,10 @@ export const BuildingMarketBoard: React.FC<BuildingMarketBoardProps> = ({
         flexDirection: 'column',
         gap: '12px',
         boxSizing: 'border-box',
-        maxWidth: '1200px',
-        width: '100%'
+        maxWidth: '1360px',
+        width: '96vw',
+        maxHeight: '92vh',
+        overflowY: 'auto'
       }}
     >
       {/* 1. 상단 보드 헤더 (양피지 건축 설계도 감성) */}
@@ -145,8 +147,14 @@ export const BuildingMarketBoard: React.FC<BuildingMarketBoardProps> = ({
               </span>
             </div>
 
-            {/* 우측: 해당 티어의 건물 카드들 */}
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tier.ids.length}, 1fr)`, gap: '6px' }}>
+            {/* 우측: 해당 티어의 건물 카드들 (minmax(0, 1fr)로 부모 너비 초과 방지) */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: `repeat(${tier.ids.length}, minmax(0, 1fr))`, 
+              gap: '6px',
+              minWidth: 0,
+              overflow: 'hidden'
+            }}>
               {tier.ids.map(bId => {
                 const def = BUILDINGS_CATALOG.find(b => b.id === bId);
                 if (!def) return null;
@@ -192,6 +200,8 @@ export const BuildingMarketBoard: React.FC<BuildingMarketBoardProps> = ({
                         : '0 2px 4px rgba(0,0,0,0.15)',
                       cursor: canBuild ? 'pointer' : 'default',
                       minHeight: '76px',
+                      minWidth: 0,
+                      overflow: 'hidden',
                       transition: 'transform 0.15s ease'
                     }}
                     onMouseEnter={e => {

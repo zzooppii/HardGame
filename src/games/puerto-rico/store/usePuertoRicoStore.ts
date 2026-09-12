@@ -199,7 +199,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       });
     }
 
-    const rolesToUse: RoleType[] = playerCount >= 4 
+    const rolesToUse: RoleType[] = (playerCount === 2 || playerCount >= 4)
       ? [...INITIAL_ROLES, 'prospector'] 
       : [...INITIAL_ROLES];
 
@@ -214,6 +214,9 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       : playerCount === 3
         ? [{ capacity: 4, goodType: null, loaded: 0 }, { capacity: 5, goodType: null, loaded: 0 }, { capacity: 6, goodType: null, loaded: 0 }]
         : [{ capacity: 5, goodType: null, loaded: 0 }, { capacity: 6, goodType: null, loaded: 0 }, { capacity: 7, goodType: null, loaded: 0 }];
+
+    const colonistSupplyCount = playerCount === 2 ? 40 : playerCount === 3 ? 55 : playerCount === 4 ? 75 : 95;
+    const vpSupplyCount = playerCount === 2 ? 65 : playerCount === 3 ? 75 : playerCount === 4 ? 100 : 122;
 
     set({
       playMode: soloVsAI ? 'solo' : 'local_pass',
@@ -230,8 +233,8 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       plantationDrawPile: deck,
       quarrySupply: 8,
       colonistShip: playerCount,
-      colonistSupply: 55,
-      vpSupply: playerCount * 25,
+      colonistSupply: colonistSupplyCount,
+      vpSupply: vpSupplyCount,
       goodsSupply: { corn: 10, indigo: 11, sugar: 9, tobacco: 9, coffee: 9 },
       tradingHouse: [],
       cargoShips,
@@ -278,7 +281,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       });
     }
 
-    const rolesToUse: RoleType[] = playerCount >= 4 
+    const rolesToUse: RoleType[] = (playerCount === 2 || playerCount >= 4)
       ? [...INITIAL_ROLES, 'prospector'] 
       : [...INITIAL_ROLES];
 
@@ -293,6 +296,9 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       : playerCount === 3
         ? [{ capacity: 4, goodType: null, loaded: 0 }, { capacity: 5, goodType: null, loaded: 0 }, { capacity: 6, goodType: null, loaded: 0 }]
         : [{ capacity: 5, goodType: null, loaded: 0 }, { capacity: 6, goodType: null, loaded: 0 }, { capacity: 7, goodType: null, loaded: 0 }];
+
+    const colonistSupplyCount = playerCount === 2 ? 40 : playerCount === 3 ? 55 : playerCount === 4 ? 75 : 95;
+    const vpSupplyCount = playerCount === 2 ? 65 : playerCount === 3 ? 75 : playerCount === 4 ? 100 : 122;
 
     set({
       playMode: 'online',
@@ -309,8 +315,8 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       plantationDrawPile: deck,
       quarrySupply: 8,
       colonistShip: playerCount,
-      colonistSupply: 55,
-      vpSupply: playerCount * 25,
+      colonistSupply: colonistSupplyCount,
+      vpSupply: vpSupplyCount,
       goodsSupply: { corn: 10, indigo: 11, sugar: 9, tobacco: 9, coffee: 9 },
       tradingHouse: [],
       cargoShips,
@@ -897,6 +903,30 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       });
     }
 
+    if (currentRole === 'mayor') {
+      // 공식 룰: 시장 단계 종료 시 모든 플레이어의 건물(Building)에 있는 빈 일꾼 슬롯 수 합계(최소 인원수)만큼 공급처에서 이주민 배로 충원
+      const { colonistSupply } = get();
+      const emptyBldgSlots = players.reduce((sum, p) => {
+        return sum + p.buildings.reduce((bSum, b) => {
+          const def = BUILDINGS_CATALOG.find(x => x.id === b.buildingId);
+          return bSum + Math.max(0, (def?.maxColonists || 1) - b.colonists);
+        }, 0);
+      }, 0);
+
+      const neededForShip = Math.max(players.length, emptyBldgSlots);
+      const shipLoad = Math.min(neededForShip, colonistSupply);
+      const remainingSupply = Math.max(0, colonistSupply - shipLoad);
+
+      if (shipLoad < neededForShip) {
+        get().addLog(`⚠️ 이주민 공급처가 고갈되어 이주민 배를 가득 채우지 못했습니다! (${shipLoad}/${neededForShip}명) 이번 라운드 종료 시 게임이 종료됩니다.`, 'reward');
+      }
+
+      set({
+        colonistShip: shipLoad,
+        colonistSupply: remainingSupply
+      });
+    }
+
     if (currentRole === 'trader' && tradingHouse.length >= 4) {
       get().addLog(`🏪 상점이 가득 차서 상품들이 유럽으로 출항했습니다. (상점 비워짐)`, 'info');
       set({ tradingHouse: [] });
@@ -915,8 +945,10 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
 
     const { roleCards } = get();
     const selectedCount = roleCards.filter(rc => rc.selectedByPlayerId !== null).length;
+    // 2인 게임은 1라운드에 각 플레이어가 3개씩 총 6개의 역할을 번갈아 선택함
+    const maxRolesInRound = players.length === 2 ? 6 : players.length;
 
-    if (selectedCount >= players.length) {
+    if (selectedCount >= maxRolesInRound) {
       get().endRound();
     } else {
       const { governorIndex } = get();
@@ -929,7 +961,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       });
 
       const nextPlayer = players[nextSelectorIdx];
-      get().addLog(`👉 ${nextPlayer.name}님이 역할을 선택할 차례입니다.`, 'role');
+      get().addLog(`👉 ${nextPlayer.name}님이 역할을 선택할 차례입니다. (${selectedCount + 1}/${maxRolesInRound})`, 'role');
 
       get().syncToPeers();
 
@@ -946,31 +978,25 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       round, 
       roleCards, 
       colonistSupply, 
+      colonistShip,
       vpSupply 
     } = get();
 
+    // 선택되지 않은 역할 카드들에 +1 두블론 누적, 선택 상태 초기화
     const updatedRoleCards = roleCards.map(rc => ({
       ...rc,
       doubloons: rc.selectedByPlayerId === null ? rc.doubloons + 1 : rc.doubloons,
       selectedByPlayerId: null
     }));
 
-    const totalEmptySlots = players.reduce((sum, p) => {
-      const emptyPlant = p.plantations.filter(pl => !pl.hasColonist).length;
-      const emptyBldg = p.buildings.reduce((bSum, b) => {
-        const def = BUILDINGS_CATALOG.find(x => x.id === b.buildingId);
-        return bSum + ((def?.maxColonists || 1) - b.colonists);
-      }, 0);
-      return sum + emptyPlant + emptyBldg;
-    }, 0);
-
-    const neededColonists = Math.max(players.length, totalEmptySlots);
-    const takenColonists = Math.min(neededColonists, colonistSupply);
-
     let isEnded = false;
     let reason: string | null = null;
 
-    if (colonistSupply <= 0) {
+    // 공식 룰 종료 조건 (라운드가 완전히 끝난 시점에 정산):
+    // 1. 시장 단계에서 공급처가 고갈되어 배를 충분히 채우지 못했거나 공급처 0
+    // 2. 승점(VP) 칩이 모두 소진됨
+    // 3. 한 플레이어가 12채의 건물을 모두 건설함
+    if (colonistSupply <= 0 && colonistShip === 0) {
       isEnded = true;
       reason = '이주민 공급처가 모두 고갈되었습니다.';
     } else if (vpSupply <= 0) {
@@ -1000,8 +1026,6 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       governorIndex: nextGovIdx,
       currentTurnPlayerIndex: nextGovIdx,
       roleCards: updatedRoleCards,
-      colonistShip: takenColonists,
-      colonistSupply: Math.max(0, colonistSupply - takenColonists),
       currentPhase: 'select_role',
       currentRole: null,
       playersCompletedAction: []
