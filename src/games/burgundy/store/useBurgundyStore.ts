@@ -26,6 +26,7 @@ interface BurgundyState {
   goodsDeck: GoodsTile[];
   logs: string[];
   isGameOver: boolean;
+  aiDifficulty: 'easy' | 'normal' | 'hard';
   
   // 현재 UI 선택 상태
   selectedDieIndex: 0 | 1 | null;
@@ -33,7 +34,7 @@ interface BurgundyState {
   uiTheme: 'tabletop' | 'modern';
 
   // 액션
-  initGame: (playerCount?: number, withAI?: boolean) => void;
+  initGame: (playerCount?: number, withAI?: boolean, aiDifficulty?: 'easy' | 'normal' | 'hard') => void;
   initOnlineGame: (
     playerCount: number,
     humanPlayers: { name: string; peerId: string }[],
@@ -53,6 +54,7 @@ interface BurgundyState {
   takeWorkersAction: () => boolean;
   buyFromBlackMarket: (tileId: string) => boolean;
   endTurnIfFinished: () => void;
+  runAITurnIfNeeded: () => void;
   toggleUITheme: () => void;
 }
 
@@ -69,6 +71,7 @@ export const getSerializableBurgundyState = (state: BurgundyState) => ({
   goodsDeck: state.goodsDeck,
   logs: state.logs,
   isGameOver: state.isGameOver,
+  aiDifficulty: state.aiDifficulty,
 });
 
 export const useBurgundyStore = create<BurgundyState>((set, get) => ({
@@ -87,6 +90,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
   goodsDeck: [],
   logs: [],
   isGameOver: false,
+  aiDifficulty: 'normal',
   selectedDieIndex: null,
   selectedKeySlotIndex: null,
   uiTheme: (typeof localStorage !== 'undefined' && localStorage.getItem('pr_ui_theme') === 'modern') ? 'modern' : 'tabletop',
@@ -104,7 +108,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     }));
   },
 
-  initGame: (playerCount = 2, withAI = true) => {
+  initGame: (playerCount = 2, withAI = true, aiDifficulty: 'easy' | 'normal' | 'hard' = 'normal') => {
     const tileDeck = generateTilePool();
     const goodsDeck = generateGoodsTiles();
 
@@ -165,6 +169,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       goodsDeck,
       logs: ['🏰 버건디의 성 게임이 시작되었습니다! 영지를 번영시키세요.'],
       isGameOver: false,
+      aiDifficulty,
       selectedDieIndex: 0,
       selectedKeySlotIndex: null
     });
@@ -559,7 +564,13 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     const curr = players[currentTurnPlayerIndex];
 
     // 현재 플레이어가 주사위 2개를 모두 썼는지 확인
-    if (!curr.usedDice[0] || !curr.usedDice[1]) return;
+    if (!curr.usedDice[0] || !curr.usedDice[1]) {
+      // ★ 핵심: 현재 플레이어가 AI이고 주사위가 아직 남아있다면, 두 번째 주사위 액션을 실행!
+      if (curr.isAI && !get().isGameOver) {
+        get().runAITurnIfNeeded();
+      }
+      return;
+    }
 
     // 다음 플레이어로 턴 전환
     const nextPlayerIndex = (currentTurnPlayerIndex + 1) % players.length;
@@ -581,6 +592,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
           selectedDieIndex: 0
         });
         get().syncToPeers();
+        get().runAITurnIfNeeded();
       } else {
         // 페이즈 완료
         const currentPhaseIdx = PHASES.indexOf(phase);
@@ -617,6 +629,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
             selectedDieIndex: 0
           });
           get().syncToPeers();
+          get().runAITurnIfNeeded();
         } else {
           // 게임 완전 종료!
           set({ isGameOver: true });
@@ -630,37 +643,59 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
         selectedDieIndex: 0
       });
       get().syncToPeers();
+      get().runAITurnIfNeeded();
     }
+  },
 
+  // AI 플레이어 자동 행동 처리 (주사위가 남아있는 동안 1개씩 순차 실행)
+  runAITurnIfNeeded: () => {
     // 온라인 모드일 때 AI 턴 처리는 오직 호스트만 수행
     if (get().playMode === 'online' && !get().isHost) {
       return;
     }
 
-    // AI 플레이어 턴인 경우 자동 실행
+    if (get().isGameOver) return;
+
+    const curr = get().players[get().currentTurnPlayerIndex];
+    if (!curr || !curr.isAI) return;
+
+    // 이미 주사위를 둘 다 썼으면 실행 안 함
+    if (curr.usedDice[0] && curr.usedDice[1]) return;
+
     setTimeout(() => {
       const state = get();
-      const nextP = state.players[state.currentTurnPlayerIndex];
-      if (nextP && nextP.isAI && !state.isGameOver) {
-        const decision = BurgundyAI.decideAction(nextP, state.centralDepots, state.phase);
-        if (decision) {
-          if (decision.type === 'place_tile' && decision.tileIndexInKeySlots !== undefined && decision.targetSlotId !== undefined) {
-            set({ selectedDieIndex: decision.dieIndex, selectedKeySlotIndex: decision.tileIndexInKeySlots });
-            state.placeTileFromStorage(decision.targetSlotId);
-          } else if (decision.type === 'take_tile' && decision.depotNumber !== undefined) {
-            const depotTiles = state.centralDepots[decision.depotNumber];
-            if (depotTiles.length > 0) {
-              set({ selectedDieIndex: decision.dieIndex });
-              state.takeTileFromDepot(decision.depotNumber, depotTiles[0].id);
-            }
-          } else if (decision.type === 'sell_goods') {
+      if (state.isGameOver) return;
+      const p = state.players[state.currentTurnPlayerIndex];
+      if (!p || !p.isAI) return;
+      if (p.usedDice[0] && p.usedDice[1]) return;
+
+      const decision = BurgundyAI.decideAction(p, state.centralDepots, state.phase, state.aiDifficulty);
+      if (decision) {
+        if (decision.type === 'place_tile' && decision.tileIndexInKeySlots !== undefined && decision.targetSlotId !== undefined) {
+          set({ selectedDieIndex: decision.dieIndex, selectedKeySlotIndex: decision.tileIndexInKeySlots });
+          state.placeTileFromStorage(decision.targetSlotId);
+        } else if (decision.type === 'take_tile' && decision.depotNumber !== undefined) {
+          const depotTiles = state.centralDepots[decision.depotNumber];
+          if (depotTiles && depotTiles.length > 0) {
             set({ selectedDieIndex: decision.dieIndex });
-            state.sellGoodsAction(decision.dieValue);
+            state.takeTileFromDepot(decision.depotNumber, depotTiles[0].id);
           } else {
+            // 디포가 비어있으면 안전하게 일꾼 획득으로 대체
             set({ selectedDieIndex: decision.dieIndex });
             state.takeWorkersAction();
           }
+        } else if (decision.type === 'sell_goods') {
+          set({ selectedDieIndex: decision.dieIndex });
+          state.sellGoodsAction(decision.dieValue);
+        } else {
+          set({ selectedDieIndex: decision.dieIndex });
+          state.takeWorkersAction();
         }
+      } else {
+        // 결정할 액션이 없으면 가용 주사위로 일꾼 획득 수행
+        const unusedIndex = !p.usedDice[0] ? 0 : 1;
+        set({ selectedDieIndex: unusedIndex });
+        state.takeWorkersAction();
       }
     }, 600);
   },
