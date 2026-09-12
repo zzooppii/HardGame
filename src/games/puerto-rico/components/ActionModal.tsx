@@ -4,7 +4,7 @@ import { BUILDINGS_CATALOG, GOODS_DATA } from '../data/buildings';
 import { calculateBuildingCost, calculateProduction, hasBuilding } from '../engine/gameLogic';
 import type { GoodType, PlantationType } from '../types';
 import { PuertoRicoAI } from '../engine/aiPlayer';
-import { Sparkles, Check } from 'lucide-react';
+import { Sparkles, Check, Eye, Maximize2 } from 'lucide-react';
 import { soundManager } from '../../../utils/sound';
 import { showFeedback } from '../../../utils/feedback';
 
@@ -29,6 +29,8 @@ export const ActionModal: React.FC = () => {
     playMode,
     myPlayerId
   } = usePuertoRicoStore();
+
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
 
   const player = players[currentTurnPlayerIndex];
 
@@ -84,6 +86,97 @@ export const ActionModal: React.FC = () => {
     executeCaptain(shipIndex, goodType);
   };
 
+  const getPhaseTitle = () => {
+    switch (currentPhase) {
+      case 'settler_action': return '🌱 개척자: 농장 또는 채석장 선택';
+      case 'mayor_assign': return '🏛️ 시장: 일꾼 배치 및 재조정';
+      case 'builder_action': return '🏗️ 건축가: 식민지 건물 건설';
+      case 'craftsman_bonus': return '⚙️ 감독관: 특권 보너스 상품 선택';
+      case 'trader_action': return '⚖️ 상인: 상품 판매';
+      case 'captain_action': return '⚓ 선장: 상품 선적';
+      default: return '행동 수행';
+    }
+  };
+
+  // 모달을 최소화했을 때: 화면 우측 하단 플로팅 바로 축소하여 실제 보드판을 마음껏 확인 가능
+  if (isMinimized) {
+    return (
+      <div 
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 500,
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          border: '2px solid var(--amber-border-bright)',
+          borderRadius: '14px',
+          padding: '12px 18px',
+          boxShadow: '0 12px 30px rgba(0,0,0,0.8), 0 0 20px rgba(229, 169, 60, 0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          animation: 'bounceIn 0.3s ease'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '1.6rem' }}>
+            {currentPhase === 'builder_action' ? '🏗️' : '📜'}
+          </span>
+          <div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--gold-secondary)', fontWeight: 700 }}>
+              {player.name}님의 행동 차례 (보드판 둘러보는 중)
+            </div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f8fafc' }}>
+              {getPhaseTitle()}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={() => setIsMinimized(false)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: '#000',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(217, 119, 6, 0.4)'
+            }}
+          >
+            <Maximize2 size={15} /> 액션 창 다시 펴기
+          </button>
+          {currentPhase === 'builder_action' && (
+            <button 
+              onClick={() => {
+                setIsMinimized(false);
+                handleBuilder(null);
+              }}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                background: 'rgba(51, 65, 85, 0.8)',
+                color: '#cbd5e1',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                border: '1px solid rgba(255,255,255,0.15)',
+                cursor: 'pointer'
+              }}
+            >
+              건설 패스
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       position: 'fixed',
@@ -103,36 +196,55 @@ export const ActionModal: React.FC = () => {
         className="glass-panel" 
         style={{
           width: '100%',
-          maxWidth: '740px',
-          maxHeight: '90vh',
+          maxWidth: currentPhase === 'builder_action' ? '920px' : '760px',
+          maxHeight: '92vh',
           overflowY: 'auto',
-          padding: '28px',
+          padding: '24px 28px',
           background: 'linear-gradient(145deg, #182030 0%, #0d121d 100%)',
           border: '1.5px solid var(--amber-border-bright)',
           boxShadow: '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(229, 169, 60, 0.15)'
         }}
       >
-        {/* 모달 헤더: 역할 이름 및 특권 여부 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '14px' }}>
+        {/* 모달 헤더: 역할 이름, 보드판 둘러보기(최소화) 버튼, 특권 배지 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '14px' }}>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--gold-secondary)', fontWeight: 600 }}>
               {player.name}님의 행동 차례
             </div>
-            <h2 className="font-serif" style={{ fontSize: '1.4rem', color: '#f8fafc', margin: '4px 0 0 0' }}>
-              {currentPhase === 'settler_action' && '🌱 개척자: 농장 또는 채석장 선택'}
-              {currentPhase === 'mayor_assign' && '🏛️ 시장: 일꾼 배치 및 재조정'}
-              {currentPhase === 'builder_action' && '🏗️ 건축가: 식민지 건물 건설'}
-              {currentPhase === 'craftsman_bonus' && '⚙️ 감독관: 특권 보너스 상품 선택'}
-              {currentPhase === 'trader_action' && '⚖️ 상인: 상품 판매'}
-              {currentPhase === 'captain_action' && '⚓ 선장: 상품 선적'}
+            <h2 className="font-serif" style={{ fontSize: '1.35rem', color: '#f8fafc', margin: '4px 0 0 0' }}>
+              {getPhaseTitle()}
             </h2>
           </div>
 
-          {hasPrivilege && (
-            <span className="badge badge-gold" style={{ padding: '6px 12px' }}>
-              ★ 역할 특권 보유
-            </span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* 현재 보드판 확인(최소화) 버튼 */}
+            <button
+              onClick={() => setIsMinimized(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid #38bdf8',
+                color: '#7dd3fc',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              title="창을 잠시 내리고 메인 보드판을 확인합니다"
+            >
+              <Eye size={14} /> 보드판 확인하기 (창 내리기)
+            </button>
+
+            {hasPrivilege && (
+              <span className="badge badge-gold" style={{ padding: '6px 12px' }}>
+                ★ 역할 특권 보유
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 페이즈별 액션 본문 */}
@@ -157,9 +269,11 @@ export const ActionModal: React.FC = () => {
         {currentPhase === 'builder_action' && (
           <BuilderActionView 
             player={player}
+            players={players}
             hasPrivilege={hasPrivilege}
             onBuild={handleBuilder}
             onPass={() => handleBuilder(null)}
+            onMinimize={() => setIsMinimized(true)}
           />
         )}
 
@@ -460,84 +574,423 @@ const MayorActionView: React.FC<{
   );
 };
 
-// 3. 건축가 액션 뷰
+// 3. 건축가 액션 뷰 (내 상태 보드 & 단계별 필터 & 공급량 연동)
 const BuilderActionView: React.FC<{
   player: any;
+  players: any[];
   hasPrivilege: boolean;
   onBuild: (id: string) => void;
   onPass: () => void;
-}> = ({ player, hasPrivilege, onBuild, onPass }) => {
+  onMinimize: () => void;
+}> = ({ player, players, hasPrivilege, onBuild, onPass, onMinimize }) => {
+  const [selectedTier, setSelectedTier] = useState<number>(0); // 0: 전체, 1~4: 단계별
+
+  // 1. 내 상태 분석
+  const activeQuarries = player.plantations.filter((p: any) => p.type === 'quarry' && p.hasColonist).length;
+  const totalQuarries = player.plantations.filter((p: any) => p.type === 'quarry').length;
+  const occupiedSlots = player.buildings.reduce((sum: number, b: any) => {
+    const def = BUILDINGS_CATALOG.find(x => x.id === b.buildingId);
+    return sum + (def?.category === 'large' ? 2 : 1);
+  }, 0);
+
+  // 농장별 보유량 및 일꾼 배치 상태
+  const cropStats: Record<GoodType, { count: number; active: number }> = {
+    corn: { count: 0, active: 0 },
+    indigo: { count: 0, active: 0 },
+    sugar: { count: 0, active: 0 },
+    tobacco: { count: 0, active: 0 },
+    coffee: { count: 0, active: 0 },
+  };
+  player.plantations.forEach((p: any) => {
+    if (p.type !== 'quarry' && cropStats[p.type as GoodType]) {
+      cropStats[p.type as GoodType].count += 1;
+      if (p.hasColonist) cropStats[p.type as GoodType].active += 1;
+    }
+  });
+
+  // 보유 건물 이름 및 일꾼 상태
+  const ownedBuildingsMap = new Map<string, any>();
+  player.buildings.forEach((b: any) => {
+    ownedBuildingsMap.set(b.buildingId, b);
+  });
+
+  // 공급처 잔여 재고 계산 (일반 건물 2채, 대형 1채)
+  const getRemainingStock = (b: any) => {
+    const maxStock = b.category === 'large' ? 1 : 2;
+    const builtCount = players.reduce((sum, p) => {
+      return sum + (p.buildings.some((pb: any) => pb.buildingId === b.id) ? 1 : 0);
+    }, 0);
+    return Math.max(0, maxStock - builtCount);
+  };
+
+  // 필터링된 건물 목록
+  const filteredBuildings = BUILDINGS_CATALOG.filter(b => {
+    if (selectedTier === 0) return true;
+    return b.quarryDiscountMax === selectedTier;
+  });
+
+  // 상대 플레이어 요약
+  const opponents = players.filter(p => p.id !== player.id);
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0 }}>
-          보유 두블론: <strong style={{ color: 'var(--gold-secondary)' }}>{player.doubloons}두블론</strong>
-          {hasPrivilege && <span style={{ marginLeft: '8px', color: '#38bdf8' }}>(건축가 특권: -1두블론 할인 적용됨)</span>}
-        </p>
-        <button className="btn-secondary" onClick={onPass}>
-          건설 안 함 (Pass)
-        </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      
+      {/* 1. 내 식민지 상태 보드 (My Status Board) */}
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.75)',
+        border: '1.5px solid #d97706',
+        borderRadius: '10px',
+        padding: '12px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        boxShadow: 'inset 0 0 15px rgba(217, 119, 6, 0.1)'
+      }}>
+        {/* 상태 상단 헤더 & 바로가기 버튼 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.1rem' }}>📋</span>
+            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fde047' }}>
+              현재 내 식민지 상태 보드 (My Status Board)
+            </span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+              건물 구매 전 내 자원과 농장 현황을 반드시 확인하세요
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={onMinimize}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                background: 'rgba(56, 189, 248, 0.2)',
+                border: '1px solid #38bdf8',
+                color: '#7dd3fc',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              👁️ 메인 보드판 직접 보기
+            </button>
+            <button
+              onClick={onPass}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                background: '#475569',
+                border: 'none',
+                color: '#fff',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              건설 안 함 (Pass)
+            </button>
+          </div>
+        </div>
+
+        {/* 핵심 자원 지표 4분할 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          {/* 두블론 */}
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>보유 두블론</div>
+            <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f59e0b' }}>
+              🪙 {player.doubloons} 두블론
+            </div>
+          </div>
+
+          {/* 채석장 할인 */}
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>채석장 할인</div>
+            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#cbd5e1' }}>
+              ⛏️ {activeQuarries}개 활성 <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>(총 {totalQuarries}개)</span>
+            </div>
+          </div>
+
+          {/* 건축가 특권 */}
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>건축가 특권</div>
+            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: hasPrivilege ? '#38bdf8' : '#64748b' }}>
+              {hasPrivilege ? '★ -1두블론 할인' : '특권 없음'}
+            </div>
+          </div>
+
+          {/* 건물 부지 */}
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>건물 부지 여유</div>
+            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: occupiedSlots >= 12 ? '#ef4444' : '#4ade80' }}>
+              🏛️ {occupiedSlots} / 12 칸 <span style={{ fontSize: '0.72rem' }}>({12 - occupiedSlots}칸 남음)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 내 보유 농장 및 보유 건물 한눈에 보기 */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.78rem' }}>
+          {/* 좌측: 보유 농장 */}
+          <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 10px', borderRadius: '6px' }}>
+            <div style={{ fontWeight: 700, color: '#a7f3d0', marginBottom: '4px' }}>
+              🌱 내 농장 현황 (생산 건물 결정 참고):
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {(Object.keys(cropStats) as GoodType[]).map(gt => {
+                const stat = cropStats[gt];
+                const meta = GOODS_DATA[gt];
+                return (
+                  <span 
+                    key={gt} 
+                    style={{ 
+                      padding: '2px 7px', 
+                      borderRadius: '4px', 
+                      background: stat.count > 0 ? meta.bgColor : 'rgba(255,255,255,0.05)',
+                      color: stat.count > 0 ? '#fff' : '#64748b',
+                      border: stat.count > 0 ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
+                      fontWeight: stat.count > 0 ? 700 : 400
+                    }}
+                  >
+                    {meta.icon} {meta.koreanName} {stat.count}개 (일꾼 {stat.active})
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 우측: 이미 지은 건물 목록 */}
+          <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 10px', borderRadius: '6px' }}>
+            <div style={{ fontWeight: 700, color: '#fde68a', marginBottom: '4px' }}>
+              🏛️ 이미 건설한 건물 ({player.buildings.length}채):
+            </div>
+            {player.buildings.length === 0 ? (
+              <span style={{ color: '#94a3b8' }}>아직 건설된 건물이 없습니다.</span>
+            ) : (
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {player.buildings.map((pb: any) => {
+                  const def = BUILDINGS_CATALOG.find(x => x.id === pb.buildingId);
+                  return (
+                    <span 
+                      key={pb.buildingId}
+                      style={{
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'rgba(234, 179, 8, 0.15)',
+                        border: '1px solid #ca8a04',
+                        color: '#fef08a',
+                        fontSize: '0.72rem'
+                      }}
+                    >
+                      {def?.koreanName} ({pb.colonists}/{def?.maxColonists})
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 상대방 상태 짤막 브리핑 */}
+        {opponents.length > 0 && (
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.72rem', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
+            <span style={{ fontWeight: 700 }}>👥 상대방 현황:</span>
+            {opponents.map(opp => (
+              <span key={opp.id} style={{ color: '#cbd5e1' }}>
+                <b style={{ color: opp.color }}>{opp.name}</b>: 🪙 {opp.doubloons}두블론 | 건물 {opp.buildings.length}채 | VP칩 {opp.victoryPoints}점
+              </span>
+            ))}
+          </div>
+        )}
+
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
-        {BUILDINGS_CATALOG.map(b => {
-          const isOwned = player.buildings.some((pb: any) => pb.buildingId === b.id);
+      {/* 2. 단계별 탭 필터 (1단계, 2단계, 3단계, 4단계) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {[
+            { id: 0, label: '전체 (24종)' },
+            { id: 1, label: '1단계 (1채석장 할인)' },
+            { id: 2, label: '2단계 (2채석장 할인)' },
+            { id: 3, label: '3단계 (3채석장 할인)' },
+            { id: 4, label: '4단계 대형 고급' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedTier(tab.id)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                border: selectedTier === tab.id ? '1.5px solid var(--gold-secondary)' : '1px solid rgba(255,255,255,0.12)',
+                background: selectedTier === tab.id ? 'rgba(217, 119, 6, 0.3)' : 'rgba(30, 41, 59, 0.6)',
+                color: selectedTier === tab.id ? '#fde047' : '#cbd5e1',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ fontSize: '0.76rem', color: '#cbd5e1' }}>
+          {filteredBuildings.length}개 건물 표시 중
+        </div>
+      </div>
+
+      {/* 3. 건물 목록 카드 그리드 */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
+        gap: '10px', 
+        maxHeight: '440px', 
+        overflowY: 'auto', 
+        paddingRight: '4px' 
+      }}>
+        {filteredBuildings.map(b => {
+          const isOwned = ownedBuildingsMap.has(b.id);
           const finalCost = calculateBuildingCost(b, player, hasPrivilege);
-          const canAfford = player.doubloons >= finalCost && !isOwned && player.buildings.length < 12;
+          const stock = getRemainingStock(b);
+          const isStockOut = stock <= 0;
+          const slotsNeeded = b.category === 'large' ? 2 : 1;
+          const hasSlot = (12 - occupiedSlots) >= slotsNeeded;
+          const canAfford = player.doubloons >= finalCost;
+          const canBuild = !isOwned && !isStockOut && hasSlot && canAfford;
+
+          // 채석장 할인 적용액 계산
+          const actualQuarryDiscount = Math.min(b.quarryDiscountMax, activeQuarries);
+          const privilegeDiscount = hasPrivilege ? 1 : 0;
+          const totalDiscount = actualQuarryDiscount + privilegeDiscount;
 
           return (
             <div
               key={b.id}
-              onClick={() => canAfford && onBuild(b.id)}
               style={{
-                padding: '12px',
+                padding: '12px 14px',
                 borderRadius: '8px',
                 background: isOwned 
-                  ? 'rgba(30, 41, 59, 0.4)' 
-                  : canAfford 
-                    ? 'rgba(30, 41, 59, 0.9)' 
-                    : 'rgba(15, 23, 42, 0.6)',
-                border: canAfford ? '1.5px solid var(--gold-secondary)' : '1px solid rgba(255,255,255,0.08)',
-                cursor: canAfford ? 'pointer' : 'default',
-                opacity: isOwned || !canAfford ? 0.5 : 1,
+                  ? 'rgba(30, 41, 59, 0.35)' 
+                  : canBuild 
+                    ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%)' 
+                    : 'rgba(15, 23, 42, 0.65)',
+                border: canBuild 
+                  ? '1.5px solid var(--gold-secondary)' 
+                  : isOwned 
+                    ? '1px solid rgba(255,255,255,0.08)' 
+                    : '1px solid rgba(255,255,255,0.1)',
+                opacity: isOwned ? 0.6 : isStockOut ? 0.45 : 1,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={e => {
-                if (canAfford) e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={e => {
-                if (canAfford) e.currentTarget.style.transform = 'translateY(0)';
+                gap: '8px',
+                transition: 'all 0.2s ease',
+                boxShadow: canBuild ? '0 4px 12px rgba(217, 119, 6, 0.2)' : 'none'
               }}
             >
+              {/* 상단: 이름 & 점수 & 카테고리 태그 */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f8fafc' }}>
-                    {b.koreanName}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: '#fcd34d', fontWeight: 600 }}>
-                    {b.vp} VP
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <span style={{ 
+                      fontWeight: 800, 
+                      fontSize: '0.92rem', 
+                      color: b.category === 'large' ? '#fde047' : '#f8fafc' 
+                    }}>
+                      {b.koreanName}
+                    </span>
+                    <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{b.name}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ 
+                      fontSize: '0.72rem', 
+                      padding: '1px 6px', 
+                      borderRadius: '4px',
+                      background: 'rgba(234, 179, 8, 0.2)',
+                      color: '#facc15',
+                      fontWeight: 800 
+                    }}>
+                      🏆 {b.vp} VP
+                    </span>
+                    {b.maxColonists > 0 && (
+                      <span style={{ 
+                        fontSize: '0.72rem', 
+                        padding: '1px 6px', 
+                        borderRadius: '4px',
+                        background: 'rgba(56, 189, 248, 0.15)',
+                        color: '#38bdf8',
+                        fontWeight: 700 
+                      }}>
+                        👤 {b.maxColonists}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0' }}>
+
+                <p style={{ fontSize: '0.73rem', color: '#cbd5e1', margin: '8px 0 4px 0', lineHeight: 1.35 }}>
                   {b.desc}
                 </p>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px', marginTop: '6px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  원가: {b.cost}원
-                </span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: canAfford ? 'var(--gold-secondary)' : '#ef4444' }}>
-                  {isOwned ? '보유 중' : `${finalCost} 두블론`}
-                </span>
+              {/* 하단: 비용 계산 및 구매/상태 버튼 */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                    원가 {b.cost}원 {totalDiscount > 0 && <span style={{ color: '#38bdf8' }}>(할인 -{totalDiscount}원)</span>}
+                    <span style={{ marginLeft: '6px', color: stock === 1 ? '#f59e0b' : '#94a3b8' }}>
+                      [재고 {stock}채]
+                    </span>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '0.98rem', color: canAfford ? 'var(--gold-secondary)' : '#ef4444' }}>
+                    🪙 {finalCost} 두블론
+                  </div>
+                </div>
+
+                {/* 구매 버튼 또는 상태 배지 */}
+                {isOwned ? (
+                  <div style={{ textAlign: 'center', padding: '5px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: '#94a3b8', fontSize: '0.76rem', fontWeight: 700 }}>
+                    ✓ 이미 보유 중
+                  </div>
+                ) : isStockOut ? (
+                  <div style={{ textAlign: 'center', padding: '5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', fontSize: '0.76rem', fontWeight: 700 }}>
+                    공급처 품절
+                  </div>
+                ) : !hasSlot ? (
+                  <div style={{ textAlign: 'center', padding: '5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', fontSize: '0.76rem', fontWeight: 700 }}>
+                    건물 부지 부족 (12칸 제한)
+                  </div>
+                ) : !canAfford ? (
+                  <div style={{ textAlign: 'center', padding: '5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', fontSize: '0.76rem', fontWeight: 700 }}>
+                    두블론 부족 ({finalCost - player.doubloons}원 부족)
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => onBuild(b.id)}
+                    style={{
+                      width: '100%',
+                      padding: '6px',
+                      borderRadius: '6px',
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      color: '#000',
+                      border: 'none',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      boxShadow: '0 2px 6px rgba(217, 119, 6, 0.4)'
+                    }}
+                  >
+                    🔨 건설하기 ({finalCost}두블론 지불)
+                  </button>
+                )}
               </div>
+
             </div>
           );
         })}
       </div>
+
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onReturnToLobby }) => {
   const { isGameOver, endReason, players, initGame, myPlayerId } = usePuertoRicoStore();
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
 
   useEffect(() => {
     if (isGameOver) {
@@ -75,6 +76,84 @@ export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onRet
   });
 
   const winner = scoredPlayers[0];
+  const myPlayerScored = scoredPlayers.find(sp => sp.player.id === myPlayerId);
+
+  // 모달을 최소화했을 때: 화면 하단 플로팅 바로 축소하여 보드판 전체를 감상할 수 있도록 함
+  if (isMinimized) {
+    return (
+      <div 
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 500,
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          border: '2px solid var(--gold-primary)',
+          borderRadius: '14px',
+          padding: '12px 20px',
+          boxShadow: '0 12px 30px rgba(0,0,0,0.8), 0 0 20px rgba(229, 169, 60, 0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          animation: 'bounceIn 0.3s ease'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '1.6rem' }}>🏆</span>
+          <div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--gold-secondary)', fontWeight: 700 }}>
+              게임 종료 (보드판 둘러보는 중)
+            </div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f8fafc' }}>
+              1위: <span style={{ color: winner.player.color }}>{winner.player.name}</span> ({winner.score.total} VP)
+              {myPlayerScored && myPlayerScored.player.id !== winner.player.id && (
+                <span style={{ fontSize: '0.82rem', color: '#94a3b8', marginLeft: '8px' }}>
+                  (나: {myPlayerScored.score.total} VP)
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={() => setIsMinimized(false)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: '#000',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(217, 119, 6, 0.4)'
+            }}
+          >
+            📊 점수 결과창 다시 열기
+          </button>
+          <button 
+            onClick={onReturnToLobby}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              background: 'rgba(51, 65, 85, 0.8)',
+              color: '#cbd5e1',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              border: '1px solid rgba(255,255,255,0.15)',
+              cursor: 'pointer'
+            }}
+          >
+            로비로
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -96,17 +175,43 @@ export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onRet
         className="glass-panel" 
         style={{
           width: '100%',
-          maxWidth: '740px',
-          maxHeight: '90vh',
+          maxWidth: '780px',
+          maxHeight: '92vh',
           overflowY: 'auto',
-          padding: '32px 28px',
+          padding: '28px 26px',
           background: 'linear-gradient(145deg, #1e2538 0%, #0d131f 100%)',
           border: '2px solid var(--gold-secondary)',
           boxShadow: '0 25px 50px rgba(0,0,0,0.9), 0 0 40px rgba(229, 169, 60, 0.3)',
-          textAlign: 'center'
+          textAlign: 'center',
+          position: 'relative'
         }}
       >
-        <div style={{ fontSize: '3.2rem', marginBottom: '4px' }}>🏆</div>
+        {/* 상단 우측: 보드판 둘러보기(최소화) 버튼 */}
+        <button
+          onClick={() => setIsMinimized(true)}
+          style={{
+            position: 'absolute',
+            top: '18px',
+            right: '20px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 14px',
+            borderRadius: '20px',
+            background: 'rgba(56, 189, 248, 0.15)',
+            border: '1px solid #38bdf8',
+            color: '#7dd3fc',
+            fontSize: '0.82rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          title="결과창을 잠시 내리고 현재 보드판 상태를 확인합니다"
+        >
+          👁️ 보드판 둘러보기 (창 내리기)
+        </button>
+
+        <div style={{ fontSize: '3rem', marginBottom: '4px' }}>🏆</div>
         <h2 className="font-serif text-gold-gradient" style={{ fontSize: '1.9rem', marginBottom: '4px' }}>
           게임 종료!
         </h2>
@@ -269,7 +374,25 @@ export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onRet
         </div>
 
         {/* 하단 액션 버튼 */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setIsMinimized(true)}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '8px',
+              background: 'rgba(56, 189, 248, 0.2)',
+              border: '1.5px solid #38bdf8',
+              color: '#7dd3fc',
+              fontWeight: 800,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            👁️ 현재 보드판 둘러보기
+          </button>
           <button className="btn-gold" onClick={() => initGame(players.length, true)}>
             <RotateCcw size={18} /> 새 게임 시작
           </button>
