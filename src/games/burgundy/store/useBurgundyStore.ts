@@ -27,6 +27,9 @@ interface BurgundyState {
   logs: string[];
   isGameOver: boolean;
   aiDifficulty: 'easy' | 'normal' | 'hard';
+  whiteDie: number;
+  isRollingDice: boolean;
+  hoveredTile: HexTile | null;
   
   // 현재 UI 선택 상태
   selectedDieIndex: 0 | 1 | null;
@@ -45,6 +48,8 @@ interface BurgundyState {
   syncRemoteState: (newState: Partial<BurgundyState>) => void;
   syncToPeers: () => void;
 
+  rollMyDice: () => void;
+  setHoveredTile: (tile: HexTile | null) => void;
   selectDie: (dieIndex: 0 | 1 | null) => void;
   selectKeySlot: (slotIndex: number | null) => void;
   adjustDieWithWorker: (dieIndex: 0 | 1, delta: number) => void;
@@ -72,6 +77,7 @@ export const getSerializableBurgundyState = (state: BurgundyState) => ({
   logs: state.logs,
   isGameOver: state.isGameOver,
   aiDifficulty: state.aiDifficulty,
+  whiteDie: state.whiteDie
 });
 
 export const useBurgundyStore = create<BurgundyState>((set, get) => ({
@@ -91,6 +97,9 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
   logs: [],
   isGameOver: false,
   aiDifficulty: 'normal',
+  whiteDie: 1,
+  isRollingDice: false,
+  hoveredTile: null,
   selectedDieIndex: null,
   selectedKeySlotIndex: null,
   uiTheme: (typeof localStorage !== 'undefined' && localStorage.getItem('pr_ui_theme') === 'modern') ? 'modern' : 'tabletop',
@@ -130,13 +139,14 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
         goods: [goodsDeck.pop()!], // 시작 상품 1개
         soldGoodsCount: 0,
         duchy: createInitialDuchy(),
-        dice: [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1],
+        dice: [1, 1],
         usedDice: [false, false],
+        hasRolledDice: false, // 직접 주사위를 굴려야 함
         turnOrderPos: playerCount - i // 1번 플레이어가 앞섬
       });
     }
 
-    // 중앙 1~6 디포 채우기 (디포당 1~2개 타일)
+    // 인원수별 중앙 1~6 디포 채우기 (2인: 2개, 3인: 3개, 4인: 4개)
     const centralDepots: Record<number, HexTile[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
     for (let d = 1; d <= 6; d++) {
       for (let c = 0; c < playerCount; c++) {
@@ -146,13 +156,14 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       }
     }
 
-    // 암시장 타일 4개 배치
+    // 인원수별 암시장 타일 배치 (2인: 4개, 3인: 6개, 4인: 8개)
     const blackMarketDepot: HexTile[] = [];
-    for (let b = 0; b < 4; b++) {
+    const bmCount = playerCount === 2 ? 4 : (playerCount === 3 ? 6 : 8);
+    for (let b = 0; b < bmCount; b++) {
       if (tileDeck.length > 0) blackMarketDepot.push(tileDeck.pop()!);
     }
 
-    soundManager.playDiceRoll();
+    const whiteDie = Math.floor(Math.random() * 6) + 1;
 
     set({
       playMode: withAI ? 'solo' : 'local_pass',
@@ -167,10 +178,12 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       blackMarketDepot,
       tileDeck,
       goodsDeck,
-      logs: ['🏰 버건디의 성 게임이 시작되었습니다! 영지를 번영시키세요.'],
+      whiteDie,
+      isRollingDice: false,
+      logs: [`🏰 버건디의 성(${playerCount}인용 보드)이 시작되었습니다! [🎲 주사위 굴리기] 버튼을 눌러 라운드를 시작하세요.`],
       isGameOver: false,
       aiDifficulty,
-      selectedDieIndex: 0,
+      selectedDieIndex: null,
       selectedKeySlotIndex: null
     });
   },
@@ -200,8 +213,9 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
         goods: [goodsDeck.pop()!],
         soldGoodsCount: 0,
         duchy: createInitialDuchy(),
-        dice: [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1],
+        dice: [1, 1],
         usedDice: [false, false],
+        hasRolledDice: false,
         turnOrderPos: playerCount - i
       });
     }
@@ -216,11 +230,12 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     }
 
     const blackMarketDepot: HexTile[] = [];
-    for (let b = 0; b < 4; b++) {
+    const bmCount = playerCount === 2 ? 4 : (playerCount === 3 ? 6 : 8);
+    for (let b = 0; b < bmCount; b++) {
       if (tileDeck.length > 0) blackMarketDepot.push(tileDeck.pop()!);
     }
 
-    soundManager.playDiceRoll();
+    const whiteDie = Math.floor(Math.random() * 6) + 1;
 
     set({
       playMode: 'online',
@@ -235,15 +250,75 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
       blackMarketDepot,
       tileDeck,
       goodsDeck,
+      whiteDie,
+      isRollingDice: false,
       logs: [`🌐 온라인 멀티플레이 대전이 시작되었습니다! (방 코드: ${roomCode})`],
       isGameOver: false,
-      selectedDieIndex: 0,
+      aiDifficulty: 'normal',
+      selectedDieIndex: null,
       selectedKeySlotIndex: null
     });
 
     if (isHost) {
       get().syncToPeers();
     }
+  },
+
+  setHoveredTile: (tile) => set({ hoveredTile: tile }),
+
+  // 플레이어가 직접 주사위를 굴리는 액션
+  rollMyDice: () => {
+    const state = get();
+    const curr = state.players[state.currentTurnPlayerIndex];
+    if (!curr || curr.hasRolledDice || state.isRollingDice) return;
+
+    // 온라인 모드인 경우 내 턴이 아니면 굴릴 수 없음
+    if (state.playMode === 'online' && curr.id !== state.myPlayerId) return;
+
+    set({ isRollingDice: true });
+    soundManager.playDiceRoll();
+
+    setTimeout(() => {
+      const currentState = get();
+      const p = currentState.players[currentState.currentTurnPlayerIndex];
+      if (!p) return;
+
+      const d1 = Math.floor(Math.random() * 6) + 1;
+      const d2 = Math.floor(Math.random() * 6) + 1;
+      const whiteDieVal = Math.floor(Math.random() * 6) + 1;
+
+      const updatedPlayers = currentState.players.map((pl, idx) => {
+        if (idx === currentState.currentTurnPlayerIndex) {
+          return {
+            ...pl,
+            dice: [d1, d2] as [number, number],
+            usedDice: [false, false] as [boolean, boolean],
+            hasRolledDice: true
+          };
+        }
+        return pl;
+      });
+
+      const updatedLogs = [
+        `🎲 [${p.name}]님이 주사위를 굴렸습니다! [${d1}], [${d2}] (흰색 주사위: ${whiteDieVal})`,
+        ...currentState.logs
+      ];
+
+      set({
+        players: updatedPlayers,
+        whiteDie: whiteDieVal,
+        isRollingDice: false,
+        selectedDieIndex: 0,
+        logs: updatedLogs
+      });
+
+      get().syncToPeers();
+
+      // AI 차례인 경우 주사위를 굴린 후 행동 진행
+      if (p.isAI) {
+        get().runAITurnIfNeeded();
+      }
+    }, 650);
   },
 
   selectDie: (dieIndex) => {
@@ -565,7 +640,7 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
 
     // 현재 플레이어가 주사위 2개를 모두 썼는지 확인
     if (!curr.usedDice[0] || !curr.usedDice[1]) {
-      // ★ 핵심: 현재 플레이어가 AI이고 주사위가 아직 남아있다면, 두 번째 주사위 액션을 실행!
+      // 현재 플레이어가 AI이고 주사위가 아직 남아있다면, 다음 주사위 액션 실행
       if (curr.isAI && !get().isGameOver) {
         get().runAITurnIfNeeded();
       }
@@ -578,18 +653,20 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     // 전원 주사위를 모두 사용했으면 라운드 종료
     if (nextPlayerIndex === 0) {
       if (round < 5) {
-        // 다음 라운드: 주사위 새로 굴림
+        // 다음 라운드: 주사위 리셋 및 주사위 굴리기 대기
         const refreshedPlayers = players.map(p => ({
           ...p,
-          dice: [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1] as [number, number],
-          usedDice: [false, false] as [boolean, boolean]
+          dice: [1, 1] as [number, number],
+          usedDice: [false, false] as [boolean, boolean],
+          hasRolledDice: false
         }));
-        soundManager.playDiceRoll();
         set({
           round: round + 1,
           players: refreshedPlayers,
           currentTurnPlayerIndex: 0,
-          selectedDieIndex: 0
+          selectedDieIndex: null,
+          selectedKeySlotIndex: null,
+          logs: [`🔔 [페이즈 ${phase}] 라운드 ${round + 1}이 시작되었습니다! [🎲 주사위 굴리기] 버튼을 눌러주세요.`, ...get().logs]
         });
         get().syncToPeers();
         get().runAITurnIfNeeded();
@@ -604,18 +681,26 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
             return {
               ...p,
               silverlings: p.silverlings + mineCount,
-              dice: [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1] as [number, number],
-              usedDice: [false, false] as [boolean, boolean]
+              dice: [1, 1] as [number, number],
+              usedDice: [false, false] as [boolean, boolean],
+              hasRolledDice: false
             };
           });
 
-          // 디포 새로 보충
+          // 디포 새로 보충 (인원수에 따라: 2인: 2개, 3인: 3개, 4인: 4개)
           const newTileDeck = [...tileDeck];
           const newDepots: Record<number, HexTile[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
           for (let d = 1; d <= 6; d++) {
             for (let c = 0; c < players.length; c++) {
               if (newTileDeck.length > 0) newDepots[d].push(newTileDeck.pop()!);
             }
+          }
+
+          // 암시장 보충 (2인: 4개, 3인: 6개, 4인: 8개)
+          const newBM: HexTile[] = [];
+          const bmCount = players.length === 2 ? 4 : (players.length === 3 ? 6 : 8);
+          for (let b = 0; b < bmCount; b++) {
+            if (newTileDeck.length > 0) newBM.push(newTileDeck.pop()!);
           }
 
           soundManager.playFanfare();
@@ -625,8 +710,11 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
             players: refreshedPlayers,
             tileDeck: newTileDeck,
             centralDepots: newDepots,
+            blackMarketDepot: newBM,
             currentTurnPlayerIndex: 0,
-            selectedDieIndex: 0
+            selectedDieIndex: null,
+            selectedKeySlotIndex: null,
+            logs: [`🎉 [새로운 페이즈 ${nextPhase}] 시작! 광산 은화 지급 및 디포(${players.length}인용)가 재보충되었습니다.`, ...get().logs]
           });
           get().syncToPeers();
           get().runAITurnIfNeeded();
@@ -638,16 +726,30 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
         }
       }
     } else {
+      // 같은 라운드 내 다음 플레이어 턴으로 전환
+      const updatedPlayers = players.map((p, idx) => {
+        if (idx === nextPlayerIndex) {
+          return {
+            ...p,
+            hasRolledDice: false // 다음 플레이어도 직접 주사위 굴려야 함!
+          };
+        }
+        return p;
+      });
+
       set({
         currentTurnPlayerIndex: nextPlayerIndex,
-        selectedDieIndex: 0
+        players: updatedPlayers,
+        selectedDieIndex: null,
+        selectedKeySlotIndex: null,
+        logs: [`👉 [${players[nextPlayerIndex].name}]님의 차례입니다. 주사위를 굴려주세요!`, ...get().logs]
       });
       get().syncToPeers();
       get().runAITurnIfNeeded();
     }
   },
 
-  // AI 플레이어 자동 행동 처리 (주사위가 남아있는 동안 1개씩 순차 실행)
+  // AI 플레이어 자동 행동 처리 (주사위 굴리기 -> 1차 액션 -> 2차 액션)
   runAITurnIfNeeded: () => {
     // 온라인 모드일 때 AI 턴 처리는 오직 호스트만 수행
     if (get().playMode === 'online' && !get().isHost) {
@@ -659,14 +761,25 @@ export const useBurgundyStore = create<BurgundyState>((set, get) => ({
     const curr = get().players[get().currentTurnPlayerIndex];
     if (!curr || !curr.isAI) return;
 
-    // 이미 주사위를 둘 다 썼으면 실행 안 함
+    // 1. AI가 아직 주사위를 굴리지 않았다면 먼저 주사위를 굴림!
+    if (!curr.hasRolledDice) {
+      setTimeout(() => {
+        const state = get();
+        const p = state.players[state.currentTurnPlayerIndex];
+        if (!p || !p.isAI || p.hasRolledDice) return;
+        state.rollMyDice();
+      }, 500);
+      return;
+    }
+
+    // 2. 이미 주사위를 둘 다 썼으면 실행 안 함
     if (curr.usedDice[0] && curr.usedDice[1]) return;
 
     setTimeout(() => {
       const state = get();
       if (state.isGameOver) return;
       const p = state.players[state.currentTurnPlayerIndex];
-      if (!p || !p.isAI) return;
+      if (!p || !p.isAI || !p.hasRolledDice) return;
       if (p.usedDice[0] && p.usedDice[1]) return;
 
       const decision = BurgundyAI.decideAction(p, state.centralDepots, state.phase, state.aiDifficulty);

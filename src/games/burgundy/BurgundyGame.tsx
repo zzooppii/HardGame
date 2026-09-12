@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useBurgundyStore } from './store/useBurgundyStore';
 import { DuchyBoard } from './components/DuchyBoard';
 import { CentralDepotBoard } from './components/CentralDepotBoard';
-import { PlayerBottomTray } from './components/PlayerBottomTray';
+import { BurgundyActionGuideHUD } from './components/BurgundyActionGuideHUD';
+import { DiceRollBanner } from './components/DiceRollBanner';
+import { BurgundyTileTooltip } from './components/BurgundyTileTooltip';
 import { BurgundyGameOverModal } from './components/BurgundyGameOverModal';
 import { Volume2, VolumeX, HelpCircle, LogOut, Globe, Copy, Check } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
@@ -29,6 +31,7 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
     players,
     currentTurnPlayerIndex,
     logs,
+    hoveredTile,
     initGame
   } = useBurgundyStore();
 
@@ -37,6 +40,15 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [viewingPlayerId, setViewingPlayerId] = useState<string>('p-0');
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   useEffect(() => {
     if (players.length === 0) {
@@ -304,8 +316,8 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
         transition: 'opacity 0.2s ease'
       }}>
         
-        {/* [좌측 54%] 내 영지 벌집 맵 + 바로 아래 일체형 컨트롤 트레이 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', height: '100%', minHeight: 0 }}>
+        {/* [좌측 50%] 내 영지 보드 (실물 보드게임 영지 매트) + 4대 행동 실시간 가이드 HUD */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%', minHeight: 0 }}>
           <div style={{ flex: 1, minHeight: 0 }}>
             {viewedPlayer && (
               <DuchyBoard 
@@ -315,20 +327,21 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
             )}
           </div>
           
+          {/* 버건디 4대 행동 안내 및 일꾼 영입 즉시 실행 HUD */}
           <div style={{ flexShrink: 0 }}>
-            <PlayerBottomTray />
+            <BurgundyActionGuideHUD />
           </div>
         </div>
 
-        {/* [우측] 중앙 디포 & 가이드 & 로그 */}
+        {/* [우측 50%] 중앙 메인 보드 (1~100 VP 트랙, 페이즈 보너스, 1~6 디포, 암시장) & 연대기 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%', minHeight: 0, overflow: 'hidden' }}>
           
-          {/* 중앙 디포 진열대 & 스플랜더 가이드 배너 & 암시장 (고유 보드 크기 보존) */}
+          {/* 중앙 디포 진열대 (인원수별 슬롯 2~4개 동적 완벽 반영) */}
           <div style={{ flexShrink: 0 }}>
             <CentralDepotBoard />
           </div>
 
-          {/* 하단 영지 연대기 로그 (남는 세로 공간을 100% 채워 단단한 균형 유지) */}
+          {/* 하단 영지 연대기 로그 */}
           <div className="saboteur-board-panel" style={{ padding: '8px 12px', flex: 1, minHeight: '80px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexShrink: 0 }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f8fafc' }}>
@@ -360,10 +373,16 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
 
       </main>
 
-      {/* 게임 종료 모달 */}
+      {/* 1. 주사위 굴리기 상호작용 배너 */}
+      <DiceRollBanner />
+
+      {/* 2. 타일 상세 설명 100% 전문 플로팅 툴팁 */}
+      <BurgundyTileTooltip tile={hoveredTile} position={mousePos} visible={!!hoveredTile} />
+
+      {/* 3. 게임 종료 모달 */}
       <BurgundyGameOverModal onReturnToLobby={onBackToLobby} />
 
-      {/* 규칙 모달 */}
+      {/* 4. 친절한 상세 규칙 모달 (유튜브 룰 가이드 완벽 반영) */}
       {showRulesModal && (
         <div style={{
           position: 'fixed',
@@ -379,38 +398,66 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
           zIndex: 200,
           padding: '20px'
         }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', padding: '24px', background: '#0e1411', border: '1.5px solid #d4af37' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '680px', maxHeight: '88vh', overflowY: 'auto', padding: '24px', background: '#0e1411', border: '1.5px solid #d4af37', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(212,175,55,0.3)', paddingBottom: '8px' }}>
               <h3 className="font-serif text-gold-gradient" style={{ margin: 0, fontSize: '1.3rem' }}>
-                버건디의 성 게임 규칙 가이드
+                🏰 버건디의 성 완벽 가이드 & 규칙
               </h3>
               <button className="btn-secondary" onClick={() => setShowRulesModal(false)}>닫기</button>
             </div>
-            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px', lineHeight: 1.45 }}>
-              <div>
-                <strong style={{ color: '#facc15' }}>1. 주사위 드래프트 액션</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  매 라운드 2개의 주사위를 굴려 ① 디포 타일 획득, ② 영지 배치, ③ 상품 판매, ④ 일꾼 2개 영입을 수행합니다.
+            
+            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '12px', lineHeight: 1.5 }}>
+              
+              <div style={{ background: 'rgba(212, 175, 55, 0.1)', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid #d4af37' }}>
+                <strong style={{ color: '#facc15' }}>📌 인원수별 보드면 세팅</strong>
+                <p style={{ margin: '3px 0 0 0' }}>
+                  • <strong>2인 플레이</strong>: 디포당 2개 타일 슬롯 배치 (총 12개 + 암시장 4개)<br/>
+                  • <strong>3인 플레이</strong>: 디포당 3개 타일 슬롯 배치 (3+ 슬롯 추가, 암시장 6개)<br/>
+                  • <strong>4인 플레이</strong>: 디포당 4개 타일 슬롯 배치 (4인 슬롯 추가, 암시장 8개)
                 </p>
               </div>
+
               <div>
-                <strong style={{ color: '#facc15' }}>2. 일꾼 토큰 보정 (±1)</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  일꾼 1개를 소모하여 주사위 눈금을 ±1 조정할 수 있습니다 (1과 6은 순환 연결).
+                <strong style={{ color: '#facc15' }}>🎲 주사위 굴리기 & 턴 진행 순환</strong>
+                <p style={{ margin: '3px 0 0 0' }}>
+                  매 라운드 시작 시 플레이어는 자신의 <strong>개인 주사위 2개</strong>를 직접 굴립니다.
+                  또한 선 플레이어는 <strong>공용 흰색 주사위</strong>를 함께 굴려 해당 번호 디포에 라운드 상품을 배치합니다.
+                  각 턴마다 주사위 2개를 소모하여 아래의 4가지 행동 중 원하는 것을 2회 수행합니다 (같은 행동 중복 가능).
                 </p>
               </div>
+
+              <div style={{ background: 'rgba(0,0,0,0.35)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <strong style={{ color: '#86efac' }}>⚡ 버건디의 4대 핵심 주사위 행동</strong>
+                <ol style={{ margin: '6px 0 0 18px', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <li><strong>디포 타일 가져오기</strong>: 주사위 눈금과 번호가 같은 디포(1~6)에서 타일 1개를 가져와 내 [임시 보관소(3칸)]에 저장합니다.</li>
+                  <li><strong>영지에 타일 배치</strong>: 내 임시 보관소에 있는 타일을 선택하고, 주사위 눈금과 일치하는 인접한 영지 빈 칸에 배치하여 즉시 고유 효과를 발동합니다.</li>
+                  <li><strong>상품 판매</strong>: 주사위 눈금 번호와 일치하는 상품을 판매하여 은화 1개와 인원수당 승점(VP)을 획득합니다.</li>
+                  <li><strong>일꾼 2명 받기</strong>: 주사위 눈금과 상관없이 주사위를 소모하여 일꾼 토큰 2개를 즉시 영입합니다.</li>
+                </ol>
+                <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#fde047' }}>
+                  🪙 <strong>중앙 암시장 구매</strong>: 주사위 소모 없이 은화 2개를 지불하여 암시장 타일을 보관소로 즉시 가져옵니다 (턴당 1회).
+                </div>
+              </div>
+
               <div>
-                <strong style={{ color: '#facc15' }}>3. 영지 배치 인접성</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  타일은 색상과 주사위 번호가 일치하고 기존 타일과 맞닿아 있는 슬롯에만 놓을 수 있습니다.
+                <strong style={{ color: '#60a5fa' }}>👷 일꾼 토큰의 위력 (주사위 눈금 ±1 보정)</strong>
+                <p style={{ margin: '3px 0 0 0' }}>
+                  일꾼 토큰 1개를 소모할 때마다 주사위 눈금을 +1 또는 -1 원하는 대로 조정할 수 있습니다. 1에서 -1하면 6이 되고, 6에서 +1하면 1이 되는 순환 룰이 적용됩니다!
                 </p>
               </div>
+
               <div>
-                <strong style={{ color: '#facc15' }}>4. 구역 완성 점수</strong>
-                <p style={{ margin: '2px 0 0 0' }}>
-                  같은 색상 구역을 모두 채우면 구역 크기 점수 + 페이즈 조기 완성 보너스를 대량 획득합니다!
-                </p>
+                <strong style={{ color: '#f472b6' }}>🏆 6대 타일 종류 및 영지 완성 점수</strong>
+                <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                  <li><strong>성 (다크그린)</strong>: 배치 즉시 무료 추가 행동 1회 획득</li>
+                  <li><strong>도시 건물 8종 (베이지)</strong>: 시청(무료배치), 교회(특수타일획득), 여관(일꾼4개), 은행(은화2개) 등 강력한 즉발 효과</li>
+                  <li><strong>목장 가축 (연두)</strong>: 동물 마리 수 점수 + 같은 목장 내 기존 동물 점수까지 누적 복리 획득</li>
+                  <li><strong>선박 (파랑)</strong>: 턴 순서 트랙 1칸 전진 + 디포의 상품 타일 독점 획득</li>
+                  <li><strong>광산 (회색)</strong>: 매 페이즈 종료 시마다 지속적으로 은화 채굴</li>
+                  <li><strong>수도원/지식 (노랑)</strong>: 게임 내내 적용되는 패시브 및 게임 종료 보너스 점수</li>
+                </ul>
               </div>
+
             </div>
           </div>
         </div>

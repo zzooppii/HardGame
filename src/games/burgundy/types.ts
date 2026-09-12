@@ -67,6 +67,7 @@ export interface PlayerBurgundy {
   duchy: DuchySlot[];           // 개인 영지 보드 (37칸 육각 맵)
   dice: [number, number];       // 이번 라운드 굴린 주사위 2개
   usedDice: [boolean, boolean]; // 주사위 사용 여부
+  hasRolledDice: boolean;       // 주사위를 직접 굴렸는지 여부
   turnOrderPos: number;         // 턴 순서 트랙 위치 (선박 배치 시 전진)
 }
 
