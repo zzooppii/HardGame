@@ -8,6 +8,7 @@ import { GameOverModal } from './components/GameOverModal';
 import { ArrowLeft, RotateCcw, HelpCircle, Volume2, VolumeX } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import { subscribeFeedback } from '../../utils/feedback';
+import { ROLES_DATA } from './data/roles';
 
 interface PuertoRicoGameProps {
   onBackToLobby: () => void;
@@ -21,7 +22,21 @@ interface FeedbackItem {
 }
 
 export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby }) => {
-  const { round, playMode, roomCode, myPlayerId, players, currentTurnPlayerIndex, initGame, uiTheme, toggleUITheme, setShowBuildingMarketModal } = usePuertoRicoStore();
+  const { 
+    round, 
+    playMode, 
+    roomCode, 
+    myPlayerId, 
+    players, 
+    currentTurnPlayerIndex, 
+    currentPhase,
+    currentRole,
+    aiDifficulty,
+    initGame, 
+    uiTheme, 
+    toggleUITheme, 
+    setShowBuildingMarketModal 
+  } = usePuertoRicoStore();
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
@@ -119,11 +134,29 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
             라운드 {round}
           </div>
 
-          {playMode === 'online' && !isMyTurn && (
+          {currTurnPlayer?.isAI ? (
+            <span className="badge" style={{ 
+              background: 'rgba(245, 158, 11, 0.25)', 
+              color: '#fde047', 
+              border: '1.5px solid #f59e0b', 
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              animation: 'pulse 1.8s infinite'
+            }}>
+              🤖 {currTurnPlayer.name} 행동 중 ({currentPhase === 'select_role' ? '역할 선택' : currentRole ? ROLES_DATA[currentRole]?.name : '행동'} 진행)
+            </span>
+          ) : !isMyTurn && playMode === 'online' ? (
             <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid #f87171', fontSize: '0.78rem' }}>
               ⏳ {currTurnPlayer?.name} 행동 중
             </span>
-          )}
+          ) : isMyTurn && currentPhase === 'select_role' ? (
+            <span className="badge badge-gold" style={{ fontSize: '0.78rem', fontWeight: 800 }}>
+              👉 내 차례: 역할을 선택하세요
+            </span>
+          ) : null}
 
           {/* 듀얼 테마 토글 버튼 (원클릭 전환 안전장치) */}
           <button
@@ -175,7 +208,7 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
             className="btn-secondary" 
             onClick={() => {
               soundManager.playClick();
-              initGame(3, true);
+              initGame(players.length, playMode === 'solo', aiDifficulty);
             }}
             style={{ padding: '6px 10px', fontSize: '0.78rem' }}
           >

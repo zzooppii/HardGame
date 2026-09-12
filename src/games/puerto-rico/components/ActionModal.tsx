@@ -791,11 +791,11 @@ const BuilderActionView: React.FC<{
 
         {/* 상대방 상태 짤막 브리핑 */}
         {opponents.length > 0 && (
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.72rem', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 14px', alignItems: 'center', fontSize: '0.72rem', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
             <span style={{ fontWeight: 700 }}>👥 상대방 현황:</span>
             {opponents.map(opp => (
               <span key={opp.id} style={{ color: '#cbd5e1' }}>
-                <b style={{ color: opp.color }}>{opp.name}</b>: 🪙 {opp.doubloons}두블론 | 건물 {opp.buildings.length}채 | VP칩 {opp.victoryPoints}점
+                <b style={{ color: opp.color }}>{opp.name}</b>: 🪙 {opp.doubloons}두블론 | 건물 {opp.buildings.length}채 | VP칩 {opp.vpChips}점
               </span>
             ))}
           </div>

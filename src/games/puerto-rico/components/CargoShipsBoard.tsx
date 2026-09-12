@@ -35,7 +35,7 @@ export const CargoShipsBoard: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '1.2rem' }}>⚓</span>
           <span style={{ fontWeight: 900, fontSize: '0.98rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
-            산후안 항구 (수송선 3척 & 무역 상점)
+            산후안 항구 (수송선 {cargoShips.length}척 & 무역 상점)
           </span>
         </div>
         <div style={{ fontSize: '0.72rem', color: '#93c5fd' }}>
@@ -43,10 +43,10 @@ export const CargoShipsBoard: React.FC = () => {
         </div>
       </div>
 
-      {/* 실물 스크린샷 1번 메인 레이아웃: 좌측 카리브 수송선 3척 & 우측 원목 상점 */}
+      {/* 실물 스크린샷 1번 메인 레이아웃: 좌측 카리브 수송선 & 우측 원목 상점 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: '14px', alignItems: 'stretch' }}>
         
-        {/* [좌측] 카리브 수송선 3척 (실제 범선 모양) */}
+        {/* [좌측] 카리브 수송선 {cargoShips.length}척 (실제 범선 모양) */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',

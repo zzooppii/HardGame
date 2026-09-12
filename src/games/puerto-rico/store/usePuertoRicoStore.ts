@@ -100,7 +100,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
   myPlayerId: 'p-0',
   isHost: true,
   roomCode: null,
-  uiTheme: (localStorage.getItem('puerto_rico_theme') as 'tabletop' | 'modern') || 'tabletop',
+  uiTheme: (typeof localStorage !== 'undefined' ? (localStorage.getItem('puerto_rico_theme') as 'tabletop' | 'modern') : null) || 'tabletop',
 
   showBuildingMarketModal: false,
   setShowBuildingMarketModal: (show: boolean) => set({ showBuildingMarketModal: show }),
@@ -180,17 +180,38 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     const market = deck.splice(0, marketSize);
 
     const players: PlayerState[] = [];
-    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
-    const names = ['플레이어 (나)', '카리브 총독 (AI 1)', '상인 펠리페 (AI 2)', '제독 디에고 (AI 3)'];
+    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+    const names = ['플레이어 (나)', '카리브 총독 (AI 1)', '상인 펠리페 (AI 2)', '제독 디에고 (AI 3)', '선장 안토니오 (AI 4)'];
 
     for (let i = 0; i < playerCount; i++) {
-      const startPlantation: PlantationType = i === 0 ? 'indigo' : (i % 2 === 1 ? 'corn' : 'indigo');
+      // 푸에르토리코 공식 룰 초기 세팅:
+      // 2인: 1번 인디고(2원), 2번 옥수수(2원)
+      // 3인: 1번 인디고(2원), 2번 인디고(2원), 3번 옥수수(2원)
+      // 4인: 1, 2번 인디고(3원), 3, 4번 옥수수(3원)
+      // 5인: 1, 2, 3번 인디고(4원), 4, 5번 옥수수(4원)
+      let startPlantation: PlantationType = 'indigo';
+      let startDoubloons = 2;
+
+      if (playerCount === 2) {
+        startPlantation = i === 0 ? 'indigo' : 'corn';
+        startDoubloons = 2;
+      } else if (playerCount === 3) {
+        startPlantation = i === 2 ? 'corn' : 'indigo';
+        startDoubloons = 2;
+      } else if (playerCount === 4) {
+        startPlantation = i >= 2 ? 'corn' : 'indigo';
+        startDoubloons = 3;
+      } else if (playerCount >= 5) {
+        startPlantation = i >= 3 ? 'corn' : 'indigo';
+        startDoubloons = 4;
+      }
+
       players.push({
         id: `p-${i}`,
         name: i === 0 ? '플레이어 1 (나)' : (soloVsAI ? names[i] : `플레이어 ${i + 1}`),
         isAI: soloVsAI && i > 0,
         color: colors[i % colors.length],
-        doubloons: i === 0 ? 2 : (i === 1 ? 2 : 3),
+        doubloons: startDoubloons,
         vpChips: 0,
         plantations: [
           { id: `start-${i}`, type: startPlantation, hasColonist: false }
@@ -260,21 +281,37 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     const marketSize = playerCount + 1;
     const market = deck.splice(0, marketSize);
 
-    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
-    const defaultAINames = ['총독 봇 (AI)', '상인 봇 (AI)', '제독 봇 (AI)'];
+    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+    const defaultAINames = ['총독 봇 (AI)', '상인 봇 (AI)', '제독 봇 (AI)', '선장 봇 (AI)'];
     const players: PlayerState[] = [];
 
     for (let i = 0; i < playerCount; i++) {
       const isHuman = i < humanPlayers.length;
       const playerName = isHuman ? humanPlayers[i].name : defaultAINames[i - humanPlayers.length];
-      const startPlantation: PlantationType = i === 0 ? 'indigo' : (i % 2 === 1 ? 'corn' : 'indigo');
+      
+      let startPlantation: PlantationType = 'indigo';
+      let startDoubloons = 2;
+
+      if (playerCount === 2) {
+        startPlantation = i === 0 ? 'indigo' : 'corn';
+        startDoubloons = 2;
+      } else if (playerCount === 3) {
+        startPlantation = i === 2 ? 'corn' : 'indigo';
+        startDoubloons = 2;
+      } else if (playerCount === 4) {
+        startPlantation = i >= 2 ? 'corn' : 'indigo';
+        startDoubloons = 3;
+      } else if (playerCount >= 5) {
+        startPlantation = i >= 3 ? 'corn' : 'indigo';
+        startDoubloons = 4;
+      }
 
       players.push({
         id: `p-${i}`,
         name: playerName,
         isAI: !isHuman,
         color: colors[i % colors.length],
-        doubloons: i === 0 ? 2 : (i === 1 ? 2 : 3),
+        doubloons: startDoubloons,
         vpChips: 0,
         plantations: [
           { id: `start-${i}`, type: startPlantation, hasColonist: false }
@@ -514,6 +551,10 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     let newQuarry = quarrySupply;
 
     if (plantationType === 'quarry') {
+      if (quarrySupply <= 0) {
+        get().passCurrentAction();
+        return;
+      }
       newQuarry = Math.max(0, quarrySupply - 1);
     } else {
       const mIdx = newMarket.indexOf(plantationType);
@@ -595,7 +636,10 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     }
 
     const buildingDef = BUILDINGS_CATALOG.find(b => b.id === buildingId);
-    if (!buildingDef) return;
+    if (!buildingDef) {
+      get().passCurrentAction();
+      return;
+    }
 
     const roleCard = roleCards.find(rc => rc.role === 'builder');
     const hasPrivilege = roleCard?.selectedByPlayerId === player.id;
@@ -718,7 +762,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     }
 
     // 선적 불가능하거나 건너뛰는 경우
-    if (shipIndex === null || goodType === null || player.goods[goodType] <= 0) {
+    if (shipIndex === null || goodType === null || player.goods[goodType] <= 0 || !cargoShips[shipIndex]) {
       get().addLog(`⚓ ${player.name}님이 선적을 건너뛰었습니다.`, 'info');
       const nextPasses = captainConsecutivePasses + 1;
       if (nextPasses >= players.length) {

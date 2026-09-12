@@ -7,7 +7,7 @@ import { soundManager } from '../../../utils/sound';
 import { usePlatformStore } from '../../../platform/store/usePlatformStore';
 
 export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onReturnToLobby }) => {
-  const { isGameOver, endReason, players, initGame, myPlayerId } = usePuertoRicoStore();
+  const { isGameOver, endReason, players, initGame, myPlayerId, aiDifficulty } = usePuertoRicoStore();
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
 
@@ -393,7 +393,7 @@ export const GameOverModal: React.FC<{ onReturnToLobby: () => void }> = ({ onRet
           >
             👁️ 현재 보드판 둘러보기
           </button>
-          <button className="btn-gold" onClick={() => initGame(players.length, true)}>
+          <button className="btn-gold" onClick={() => initGame(players.length, true, aiDifficulty)}>
             <RotateCcw size={18} /> 새 게임 시작
           </button>
           <button className="btn-secondary" onClick={onReturnToLobby}>
