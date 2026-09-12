@@ -36,6 +36,7 @@ export function getSerializableGameState(state: PuertoRicoGameState): Partial<Pu
     cargoShips: state.cargoShips,
     currentPhase: state.currentPhase,
     playersCompletedAction: state.playersCompletedAction,
+    captainConsecutivePasses: state.captainConsecutivePasses,
     isGameOver: state.isGameOver,
     endReason: state.endReason,
     actionLogs: state.actionLogs
@@ -48,7 +49,9 @@ interface PuertoRicoStore extends PuertoRicoGameState {
   isHost: boolean;
   roomCode: string | null;
   uiTheme: 'tabletop' | 'modern';
+  showBuildingMarketModal: boolean;
 
+  setShowBuildingMarketModal: (show: boolean) => void;
   toggleUITheme: () => void;
   initGame: (playerCount?: number, soloVsAI?: boolean) => void;
   initOnlineGame: (
@@ -98,6 +101,9 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
   roomCode: null,
   uiTheme: (localStorage.getItem('puerto_rico_theme') as 'tabletop' | 'modern') || 'tabletop',
 
+  showBuildingMarketModal: false,
+  setShowBuildingMarketModal: (show: boolean) => set({ showBuildingMarketModal: show }),
+
   toggleUITheme: () => {
     const nextTheme = get().uiTheme === 'tabletop' ? 'modern' : 'tabletop';
     localStorage.setItem('puerto_rico_theme', nextTheme);
@@ -134,6 +140,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
 
   currentPhase: 'idle',
   playersCompletedAction: [],
+  captainConsecutivePasses: 0,
   isGameOver: false,
   endReason: null,
   actionLogs: [],
@@ -230,6 +237,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       cargoShips,
       currentPhase: 'select_role',
       playersCompletedAction: [],
+      captainConsecutivePasses: 0,
       isGameOver: false,
       endReason: null,
       actionLogs: []
@@ -308,6 +316,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       cargoShips,
       currentPhase: 'select_role',
       playersCompletedAction: [],
+      captainConsecutivePasses: 0,
       isGameOver: false,
       endReason: null,
       actionLogs: []
@@ -378,7 +387,8 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       roleCards: updatedRoleCards,
       currentRole: role,
       currentPhase: nextPhase,
-      playersCompletedAction: []
+      playersCompletedAction: [],
+      captainConsecutivePasses: 0
     });
 
     if (role === 'mayor') {
@@ -646,6 +656,14 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       return;
     }
 
+    // 사무소(Office)가 없으면 이미 상점에 있는 상품 판매 불가
+    const canSellDuplicate = hasBuilding(player, 'office');
+    if (tradingHouse.includes(goodType) && !canSellDuplicate) {
+      get().addLog(`⚖️ ${player.name}님은 이미 상점에 있는 [${GOODS_DATA[goodType].koreanName}]을(를) 판매할 수 없습니다 (사무소 필요).`, 'info');
+      get().nextPlayerAction();
+      return;
+    }
+
     const roleCard = roleCards.find(rc => rc.role === 'trader');
     const hasPrivilege = roleCard?.selectedByPlayerId === player.id;
 
@@ -680,7 +698,7 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
   },
 
   executeCaptain: (shipIndex: number | null, goodType: GoodType | null) => {
-    const { playMode, isHost, myPlayerId, players, currentTurnPlayerIndex, cargoShips, vpSupply, roleCards, goodsSupply } = get();
+    const { playMode, isHost, myPlayerId, players, currentTurnPlayerIndex, cargoShips, vpSupply, roleCards, goodsSupply, captainConsecutivePasses } = get();
     const player = players[currentTurnPlayerIndex];
 
     if (playMode === 'online' && !isHost) {
@@ -689,9 +707,25 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       return;
     }
 
+    // 선적 불가능하거나 건너뛰는 경우
     if (shipIndex === null || goodType === null || player.goods[goodType] <= 0) {
       get().addLog(`⚓ ${player.name}님이 선적을 건너뛰었습니다.`, 'info');
-      get().nextPlayerAction();
+      const nextPasses = captainConsecutivePasses + 1;
+      if (nextPasses >= players.length) {
+        set({ captainConsecutivePasses: 0 });
+        get().finishRolePhase();
+      } else {
+        const nextIdx = (currentTurnPlayerIndex + 1) % players.length;
+        set({
+          currentTurnPlayerIndex: nextIdx,
+          captainConsecutivePasses: nextPasses
+        });
+        get().syncToPeers();
+        const nextPlayer = players[nextIdx];
+        if (nextPlayer.isAI) {
+          setTimeout(() => get().triggerAITurn(), 600);
+        }
+      }
       return;
     }
 
@@ -700,7 +734,22 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     const amountToShip = Math.min(player.goods[goodType], remainingSpace);
 
     if (amountToShip <= 0) {
-      get().nextPlayerAction();
+      const nextPasses = captainConsecutivePasses + 1;
+      if (nextPasses >= players.length) {
+        set({ captainConsecutivePasses: 0 });
+        get().finishRolePhase();
+      } else {
+        const nextIdx = (currentTurnPlayerIndex + 1) % players.length;
+        set({
+          currentTurnPlayerIndex: nextIdx,
+          captainConsecutivePasses: nextPasses
+        });
+        get().syncToPeers();
+        const nextPlayer = players[nextIdx];
+        if (nextPlayer.isAI) {
+          setTimeout(() => get().triggerAITurn(), 600);
+        }
+      }
       return;
     }
 
@@ -732,6 +781,8 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
 
     get().addLog(`⚓ ${player.name}님이 [${GOODS_DATA[goodType].koreanName}] ${amountToShip}개를 화물선에 선적하여 ${realVp} VP를 획득했습니다!`, 'ship');
 
+    const nextIdx = (currentTurnPlayerIndex + 1) % players.length;
+
     set({
       players: updatedPlayers,
       cargoShips: updatedShips,
@@ -739,15 +790,21 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
       goodsSupply: {
         ...goodsSupply,
         [goodType]: goodsSupply[goodType] + amountToShip
-      }
+      },
+      captainConsecutivePasses: 0, // 선적 성공 시 연속 패스 카운트 0 초기화 (다회차 순환 루프)
+      currentTurnPlayerIndex: nextIdx
     });
 
     get().syncToPeers();
-    get().nextPlayerAction();
+
+    const nextPlayer = players[nextIdx];
+    if (nextPlayer.isAI) {
+      setTimeout(() => get().triggerAITurn(), 600);
+    }
   },
 
   passCurrentAction: () => {
-    const { playMode, isHost, myPlayerId, players, currentTurnPlayerIndex } = get();
+    const { playMode, isHost, myPlayerId, players, currentTurnPlayerIndex, currentRole, captainConsecutivePasses } = get();
     const player = players[currentTurnPlayerIndex];
 
     if (playMode === 'online' && !isHost) {
@@ -757,6 +814,27 @@ export const usePuertoRicoStore = create<PuertoRicoStore>((set, get) => ({
     }
 
     get().addLog(`⏩ ${player.name}님이 행동을 패스했습니다.`, 'info');
+
+    if (currentRole === 'captain') {
+      const nextPasses = captainConsecutivePasses + 1;
+      if (nextPasses >= players.length) {
+        set({ captainConsecutivePasses: 0 });
+        get().finishRolePhase();
+      } else {
+        const nextIdx = (currentTurnPlayerIndex + 1) % players.length;
+        set({
+          currentTurnPlayerIndex: nextIdx,
+          captainConsecutivePasses: nextPasses
+        });
+        get().syncToPeers();
+        const nextPlayer = players[nextIdx];
+        if (nextPlayer.isAI) {
+          setTimeout(() => get().triggerAITurn(), 600);
+        }
+      }
+      return;
+    }
+
     get().nextPlayerAction();
   },
 

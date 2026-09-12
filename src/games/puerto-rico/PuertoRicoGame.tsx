@@ -21,7 +21,7 @@ interface FeedbackItem {
 }
 
 export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby }) => {
-  const { round, playMode, roomCode, myPlayerId, players, currentTurnPlayerIndex, initGame, uiTheme, toggleUITheme } = usePuertoRicoStore();
+  const { round, playMode, roomCode, myPlayerId, players, currentTurnPlayerIndex, initGame, uiTheme, toggleUITheme, setShowBuildingMarketModal } = usePuertoRicoStore();
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
@@ -146,6 +146,19 @@ export const PuertoRicoGame: React.FC<PuertoRicoGameProps> = ({ onBackToLobby })
             title="실물 보드게임 테마와 모던 다크 테마를 자유롭게 전환합니다"
           >
             {isTabletop ? '🎲 실물 보드게임 모드' : '🌙 모던 다크 모드'}
+          </button>
+
+          {/* 공용 건물 보드판 열기 버튼 */}
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              soundManager.playParchment();
+              setShowBuildingMarketModal(true);
+            }}
+            style={{ padding: '6px 11px', fontSize: '0.78rem', fontWeight: 700, color: isTabletop ? '#78350f' : '#e9d5ff', border: isTabletop ? '1.5px solid #b45309' : undefined }}
+            title="4단계 채석장 할인 공용 건물 보드판 열기"
+          >
+            🏛️ 건물판
           </button>
 
           <button 

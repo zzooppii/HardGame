@@ -105,6 +105,7 @@ export interface PuertoRicoGameState {
   // 페이즈 상태
   currentPhase: ActionPhase;
   playersCompletedAction: string[]; // 현재 역할에서 행동 완료한 플레이어 ID들
+  captainConsecutivePasses: number; // 선장 단계 연속 패스 횟수 (players.length에 도달하면 선장 종료)
   
   // 종료 조건 및 로그
   isGameOver: boolean;

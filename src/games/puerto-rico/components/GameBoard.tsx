@@ -3,9 +3,11 @@ import { usePuertoRicoStore } from '../store/usePuertoRicoStore';
 import { ROLES_DATA } from '../data/roles';
 import { GOODS_DATA } from '../data/buildings';
 import type { GoodType } from '../types';
-import { Anchor, Store, ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Building } from 'lucide-react';
 import { soundManager } from '../../../utils/sound';
 import { showFeedback } from '../../../utils/feedback';
+import { CargoShipsBoard } from './CargoShipsBoard';
+import { BuildingMarketBoard } from './BuildingMarketBoard';
 
 export const GameBoard: React.FC = () => {
   const { 
@@ -14,8 +16,6 @@ export const GameBoard: React.FC = () => {
     currentTurnPlayerIndex, 
     players, 
     selectRole,
-    cargoShips,
-    tradingHouse,
     colonistShip,
     colonistSupply,
     vpSupply,
@@ -24,7 +24,9 @@ export const GameBoard: React.FC = () => {
     plantationMarket,
     playMode,
     myPlayerId,
-    uiTheme
+    uiTheme,
+    showBuildingMarketModal,
+    setShowBuildingMarketModal
   } = usePuertoRicoStore();
 
   const isTabletop = uiTheme === 'tabletop';
@@ -176,236 +178,150 @@ export const GameBoard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 중단: 항구(화물선 3척) & 상점 & 공급처 */}
-      <div className="mid-board-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 1.1fr', gap: '14px' }}>
+      {/* 2. 스크린샷 1번: 카리브 화물선 3척 & 무역 상점 보드판 (실물 범선 & 4칸 상점) */}
+      <CargoShipsBoard />
+
+      {/* 3. 공용 공급처 자원 및 개척자 농장 시장 & 건물 보드판 열기 버튼 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', alignItems: 'stretch' }}>
         
-        {/* 2-1. 항구 (화물선 3척) */}
-        <div className={isTabletop ? 'tabletop-central-board' : 'glass-panel'} style={{ padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <Anchor size={18} color={isTabletop ? '#38bdf8' : 'var(--caribbean-teal)'} />
-            <h4 className="font-serif" style={{ fontSize: '1rem', color: isTabletop ? '#fde047' : '#f8fafc', margin: 0 }}>
-              카리브 화물선 (Cargo Ships)
-            </h4>
+        {/* 3-1. 공용 공급처 자원 (Supply & Colonist Ship) */}
+        <div className={isTabletop ? 'tabletop-central-board' : 'glass-panel'} style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={18} color="#c084fc" />
+              <h4 className="font-serif" style={{ fontSize: '0.98rem', color: isTabletop ? '#fde047' : '#f8fafc', margin: 0 }}>
+                공용 공급처 (General Supply)
+              </h4>
+            </div>
+            
+            {/* 공용 건물 보드판 (스크린샷 3번) 열기 버튼 */}
+            <button
+              onClick={() => {
+                soundManager.playParchment();
+                setShowBuildingMarketModal(true);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.76rem',
+                fontWeight: 800,
+                background: isTabletop ? 'linear-gradient(180deg, #fef3c7 0%, #fde68a 100%)' : 'rgba(168, 85, 247, 0.25)',
+                color: isTabletop ? '#78350f' : '#e9d5ff',
+                border: isTabletop ? '1.5px solid #d97706' : '1px solid #c084fc',
+                cursor: 'pointer',
+                boxShadow: isTabletop ? '0 2px 4px rgba(0,0,0,0.15)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Building size={14} />
+              🏛️ 공용 건물 보드판 보기 (3번)
+            </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {cargoShips.map((ship, idx) => {
-              const goodMeta = ship.goodType ? GOODS_DATA[ship.goodType] : null;
-              const isFull = ship.loaded >= ship.capacity;
-
-              return (
-                <div 
-                  key={idx} 
-                  className={isTabletop ? 'tabletop-ship-card' : undefined}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    background: isTabletop 
-                      ? undefined 
-                      : 'rgba(15, 23, 42, 0.7)',
-                    border: isTabletop 
-                      ? undefined 
-                      : (isFull ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)')
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.2rem' }}>⛵</span>
-                    <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: isTabletop ? '#2b1805' : '#f1f5f9' }}>
-                        화물선 #{idx + 1} ({ship.capacity}칸)
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: isTabletop ? '#78350f' : 'var(--text-muted)' }}>
-                        {goodMeta ? `${goodMeta.koreanName} 전용` : '모든 상품 적재 가능'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 적재 슬롯 시각화 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {Array.from({ length: ship.capacity }).map((_, slotIdx) => {
-                      const isOccupied = slotIdx < ship.loaded;
-                      return (
-                        <div
-                          key={slotIdx}
-                          style={{
-                            width: '22px',
-                            height: '22px',
-                            borderRadius: '4px',
-                            border: isTabletop ? '1.5px solid #8a6534' : '1px dashed rgba(255,255,255,0.2)',
-                            background: isOccupied ? (goodMeta?.bgColor || '#3b82f6') : (isTabletop ? 'rgba(0,0,0,0.06)' : 'transparent'),
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.75rem',
-                            boxShadow: isOccupied ? '0 2px 4px rgba(0,0,0,0.4)' : 'none'
-                          }}
-                        >
-                          {isOccupied && (goodMeta?.icon || '📦')}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 2-2. 상점 (Trading House) */}
-        <div className={isTabletop ? 'tabletop-central-board' : 'glass-panel'} style={{ padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <Store size={18} color={isTabletop ? '#fde047' : 'var(--gold-primary)'} />
-            <h4 className="font-serif" style={{ fontSize: '1rem', color: isTabletop ? '#fde047' : '#f8fafc', margin: 0 }}>
-              무역 상점 (Trading House)
-            </h4>
-          </div>
-
-          <div style={{ fontSize: '0.75rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)', marginBottom: '10px' }}>
-            4칸 한정, 중복 상품 판매 불가 (만선 시 비워짐)
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-            {[0, 1, 2, 3].map(slotIdx => {
-              const good = tradingHouse[slotIdx];
-              const goodMeta = good ? GOODS_DATA[good] : null;
-
-              return (
-                <div
-                  key={slotIdx}
-                  style={{
-                    height: '58px',
-                    borderRadius: '6px',
-                    border: isTabletop ? '1.5px solid #c4a470' : '1px dashed rgba(229, 169, 60, 0.3)',
-                    background: goodMeta ? goodMeta.bgColor : (isTabletop ? 'rgba(0,0,0,0.2)' : 'rgba(15, 23, 42, 0.5)'),
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '4px'
-                  }}
-                >
-                  {goodMeta ? (
-                    <>
-                      <span style={{ fontSize: '1.2rem' }}>{goodMeta.icon}</span>
-                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: goodMeta.color }}>
-                        {goodMeta.koreanName}
-                      </span>
-                    </>
-                  ) : (
-                    <span style={{ fontSize: '0.7rem', color: isTabletop ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.2)' }}>빈 칸</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 2-3. 공용 공급처 자원 (Supply & Market) */}
-        <div className={isTabletop ? 'tabletop-central-board' : 'glass-panel'} style={{ padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <ShieldCheck size={18} color="#c084fc" />
-            <h4 className="font-serif" style={{ fontSize: '1rem', color: isTabletop ? '#fde047' : '#f8fafc', margin: 0 }}>
-              공용 공급처 (Supply)
-            </h4>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '10px' }}>
             <div style={{ background: isTabletop ? 'rgba(0,0,0,0.25)' : 'rgba(15,23,42,0.6)', padding: '6px 8px', borderRadius: '6px', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.7rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)' }}>이주민 배</div>
-              <div style={{ fontWeight: 700, color: '#38bdf8', fontSize: '0.95rem' }}>👥 {colonistShip}명</div>
+              <div style={{ fontSize: '0.68rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)' }}>이주민 배</div>
+              <div style={{ fontWeight: 800, color: '#38bdf8', fontSize: '0.95rem' }}>👥 {colonistShip}명</div>
             </div>
             <div style={{ background: isTabletop ? 'rgba(0,0,0,0.25)' : 'rgba(15,23,42,0.6)', padding: '6px 8px', borderRadius: '6px', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.7rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)' }}>이주민 풀</div>
-              <div style={{ fontWeight: 700, color: '#cbd5e1', fontSize: '0.95rem' }}>{colonistSupply}명</div>
+              <div style={{ fontSize: '0.68rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)' }}>이주민 풀</div>
+              <div style={{ fontWeight: 800, color: '#cbd5e1', fontSize: '0.95rem' }}>{colonistSupply}명</div>
             </div>
             <div style={{ background: isTabletop ? 'rgba(0,0,0,0.25)' : 'rgba(15,23,42,0.6)', padding: '6px 8px', borderRadius: '6px', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.7rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)' }}>남은 VP</div>
-              <div style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.95rem' }}>🏆 {vpSupply}</div>
+              <div style={{ fontSize: '0.68rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)' }}>남은 VP</div>
+              <div style={{ fontWeight: 800, color: '#f59e0b', fontSize: '0.95rem' }}>🏆 {vpSupply}</div>
             </div>
           </div>
 
-          {/* 작물 재고 공급처 */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '8px 10px', borderRadius: '6px' }}>
+          {/* 작물 공급처 배럴 & 채석장 재고 */}
+          <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: isTabletop ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.3)', padding: '6px 8px', borderRadius: '6px' }}>
             {(Object.keys(goodsSupply) as GoodType[]).map(g => (
               <div key={g} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.9rem' }}>{GOODS_DATA[g].icon}</div>
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: GOODS_DATA[g].color }}>
+                <div style={{ fontSize: '0.85rem' }}>{GOODS_DATA[g].icon}</div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: GOODS_DATA[g].color }}>
                   {goodsSupply[g]}
                 </div>
               </div>
             ))}
-            <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '8px' }}>
+            <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: '8px' }}>
               <div style={{ fontSize: '0.85rem' }}>⛏️</div>
-              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#cbd5e1' }}>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#cbd5e1' }}>
                 {quarrySupply}
               </div>
             </div>
           </div>
         </div>
 
-      </div>
-
-      {/* 3. 하단: 개척자 오픈 농장 마켓 (오픈된 타일들) */}
-      <div className="glass-panel" style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.1rem' }}>🌱</span>
-            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#f8fafc' }}>
-              오픈된 농장 시장 (Plantation Market)
+        {/* 3-2. 개척자 오픈 농장 마켓 (오픈된 타일들) */}
+        <div className={isTabletop ? 'tabletop-central-board' : 'glass-panel'} style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.05rem' }}>🌱</span>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: isTabletop ? '#fde047' : '#f8fafc' }}>
+                오픈된 농장 시장 (Plantation Market)
+              </div>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: isTabletop ? '#cbd5e1' : 'var(--text-muted)' }}>
+              개척자 선택 가능 타일
             </div>
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            개척자 선택 가능 타일
-          </div>
-        </div>
 
-        <div className="market-scroll-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {plantationMarket.map((pType, idx) => {
-            const isQuarry = pType === 'quarry';
-            const meta = !isQuarry ? GOODS_DATA[pType as GoodType] : null;
+          <div className="market-scroll-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {plantationMarket.map((pType, idx) => {
+              const isQuarry = pType === 'quarry';
+              const meta = !isQuarry ? GOODS_DATA[pType as GoodType] : null;
 
-            return (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '5px 10px',
-                  borderRadius: '6px',
-                  background: isQuarry ? '#334155' : (meta?.bgColor || '#1e293b'),
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  fontSize: '0.82rem',
-                  color: '#f8fafc',
-                  fontWeight: 600
-                }}
-              >
-                <span>{isQuarry ? '⛏️' : meta?.icon}</span>
-                <span>{isQuarry ? '채석장' : meta?.koreanName}</span>
-              </div>
-            );
-          })}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            padding: '5px 10px',
-            borderRadius: '6px',
-            background: '#334155',
-            border: '1px dashed #94a3b8',
-            fontSize: '0.82rem',
-            color: '#cbd5e1',
-            fontWeight: 600
-          }}>
-            <span>⛏️</span>
-            <span>채석장 ({quarrySupply})</span>
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    background: isQuarry ? '#475569' : (meta?.bgColor || '#1e293b'),
+                    border: '1.5px solid rgba(255,255,255,0.25)',
+                    fontSize: '0.8rem',
+                    color: '#f8fafc',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  <span>{isQuarry ? '⛏️' : meta?.icon}</span>
+                  <span>{isQuarry ? '채석장' : meta?.koreanName}</span>
+                </div>
+              );
+            })}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              background: '#334155',
+              border: '1.5px dashed #cbd5e1',
+              fontSize: '0.8rem',
+              color: '#cbd5e1',
+              fontWeight: 700
+            }}>
+              <span>⛏️</span>
+              <span>채석장 ({quarrySupply}개)</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* 스크린샷 3번: 공용 건물 보드판 모달 오버레이 */}
+      {showBuildingMarketModal && (
+        <BuildingMarketBoard 
+          isOpen={showBuildingMarketModal}
+          onClose={() => setShowBuildingMarketModal(false)}
+        />
+      )}
 
     </div>
   );
