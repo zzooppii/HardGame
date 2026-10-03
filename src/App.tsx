@@ -7,9 +7,11 @@ import { CavernaGame } from './games/caverna/CavernaGame';
 import { ArnakGame } from './games/arnak/ArnakGame';
 import { TerraformingMarsGame } from './games/terraforming-mars/TerraformingMarsGame';
 import { SevenWondersDuelGame } from './games/seven-wonders-duel/SevenWondersDuelGame';
+import { SplendorDuelGame } from './games/splendor-duel/SplendorDuelGame';
 import { StatsModal } from './platform/components/StatsModal';
 import { AchievementsModal } from './platform/components/AchievementsModal';
 import { AchievementToast } from './platform/components/AchievementToast';
+import { ErrorBoundary } from './platform/components/ErrorBoundary';
 import { Dices, Trophy, Award } from 'lucide-react';
 
 export function App() {
@@ -20,58 +22,66 @@ export function App() {
   // 게임 플레이 중에는 플랫폼 헤더/푸터를 숨겨 100vh 완결형 풀스크린 대시보드 제공
   if (activeGameId === 'puerto-rico') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="푸에르토 리코 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
         <PuertoRicoGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
-      </>
+      </ErrorBoundary>
     );
   }
   if (activeGameId === 'burgundy') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="버건디의 성 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
         <BurgundyGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
-      </>
+      </ErrorBoundary>
     );
   }
   if (activeGameId === 'le-havre') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="르 아브르 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
         <LeHavreGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
-      </>
+      </ErrorBoundary>
     );
   }
   if (activeGameId === 'caverna') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="카베르나 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
         <CavernaGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
-      </>
+      </ErrorBoundary>
     );
   }
   if (activeGameId === 'arnak') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="아르낙 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
         <ArnakGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
-      </>
+      </ErrorBoundary>
     );
   }
   if (activeGameId === 'terraforming-mars') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="테라포밍 마스 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
         <TerraformingMarsGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
-      </>
+      </ErrorBoundary>
     );
   }
   if (activeGameId === 'seven-wonders-duel') {
     return (
-      <>
+      <ErrorBoundary fallbackTitle="세븐 원더스 듀얼 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
         <SevenWondersDuelGame onBackToLobby={() => setActiveGameId(null)} />
         <AchievementToast />
-      </>
+      </ErrorBoundary>
+    );
+  }
+  if (activeGameId === 'splendor-duel') {
+    return (
+      <ErrorBoundary fallbackTitle="스플렌더 듀얼 게임 오류" onReturnToLobby={() => setActiveGameId(null)}>
+        <SplendorDuelGame onBackToLobby={() => setActiveGameId(null)} />
+        <AchievementToast />
+      </ErrorBoundary>
     );
   }
 
