@@ -6,6 +6,9 @@ import { BurgundyActionGuideHUD } from './components/BurgundyActionGuideHUD';
 import { DiceRollBanner } from './components/DiceRollBanner';
 import { BurgundyTileTooltip } from './components/BurgundyTileTooltip';
 import { BurgundyGameOverModal } from './components/BurgundyGameOverModal';
+import { BurgundyWarehouseSellModal } from './components/BurgundyWarehouseSellModal';
+import { BurgundySpecialActionModal } from './components/BurgundySpecialActionModal';
+import { BurgundyCastleActionModal } from './components/BurgundyCastleActionModal';
 import { Volume2, VolumeX, HelpCircle, LogOut, Globe, Copy, Check } from 'lucide-react';
 import { soundManager } from '../../utils/sound';
 import { subscribeFeedback } from '../../utils/feedback';
@@ -379,7 +382,16 @@ export const BurgundyGame: React.FC<BurgundyGameProps> = ({ onBackToLobby }) => 
       {/* 2. 타일 상세 설명 100% 전문 플로팅 툴팁 */}
       <BurgundyTileTooltip tile={hoveredTile} position={mousePos} visible={!!hoveredTile} />
 
-      {/* 3. 게임 종료 모달 */}
+      {/* 3. 창고 완공 상품 매각 모달 */}
+      <BurgundyWarehouseSellModal />
+
+      {/* 4. 특수 타일 효과 모달 (선박 디포 상품 수령, 교회, 시장, 목공소, 시청) */}
+      <BurgundySpecialActionModal />
+
+      {/* 4-1. 성(Castle) 효과 무료 추가 행동 모달 */}
+      <BurgundyCastleActionModal />
+
+      {/* 5. 게임 종료 모달 */}
       <BurgundyGameOverModal onReturnToLobby={onBackToLobby} />
 
       {/* 4. 친절한 상세 규칙 모달 (유튜브 룰 가이드 완벽 반영) */}
