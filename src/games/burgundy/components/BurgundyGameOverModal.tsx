@@ -62,25 +62,31 @@ export const BurgundyGameOverModal: React.FC<BurgundyGameOverModalProps> = ({ on
       setStage(1);
       soundManager.playWoodToken();
 
-      // 전적 및 업적 플랫폼 저장
-      const scoredPlayers = players.map(p => ({
-        player: p,
-        ...calculateFinalScore(p)
-      })).sort((a, b) => b.total - a.total);
+      try {
+        // 전적 및 업적 플랫폼 저장
+        const scoredPlayers = players.map(p => ({
+          player: p,
+          ...calculateFinalScore(p)
+        })).sort((a, b) => (b.total || 0) - (a.total || 0));
 
-      const myRank = scoredPlayers.findIndex(sp => sp.player.id === myPlayerId) + 1;
-      const myResult = scoredPlayers.find(sp => sp.player.id === myPlayerId) || scoredPlayers[0];
-      const isWinner = myRank === 1;
+        const myRank = scoredPlayers.findIndex(sp => sp.player?.id === myPlayerId) + 1;
+        const myResult = scoredPlayers.find(sp => sp.player?.id === myPlayerId) || scoredPlayers[0];
+        const isWinner = myRank === 1;
 
-      usePlatformStore.getState().recordGameResult({
-        gameId: 'burgundy',
-        gameTitle: '버건디의 성',
-        isWin: isWinner,
-        rank: myRank > 0 ? myRank : 1,
-        myScore: myResult.total,
-        totalPlayers: players.length,
-        maxScore: scoredPlayers[0]?.total || myResult.total
-      });
+        if (myResult) {
+          usePlatformStore.getState().recordGameResult({
+            gameId: 'burgundy',
+            gameTitle: '버건디의 성',
+            isWin: isWinner,
+            rank: myRank > 0 ? myRank : 1,
+            myScore: myResult.total || 0,
+            totalPlayers: players.length,
+            maxScore: scoredPlayers[0]?.total || myResult.total || 0
+          });
+        }
+      } catch (err) {
+        console.error('Failed to record game result:', err);
+      }
 
       // 단계별 순차 오픈 타이머
       const t1 = setTimeout(() => {
@@ -117,17 +123,18 @@ export const BurgundyGameOverModal: React.FC<BurgundyGameOverModalProps> = ({ on
     }
   }, [isGameOver]);
 
-  if (!isGameOver) return null;
+  if (!isGameOver || !players || players.length === 0) return null;
 
   // 플레이어별 최종 점수 정산 및 순위 정렬
   const scoredPlayers = players.map(p => {
-    const score = calculateFinalScore(p);
+    const score = calculateFinalScore(p) || { total: 0, breakdown: { inGameVp: 0, silver: 0, workers: 0, goods: 0, knowledge: 0 } };
+    const duchy = p.duchy || [];
     
     // 영지 통계 계산
-    const placedTilesCount = p.duchy.filter(s => s.placedTile !== null).length;
-    const uniqueRegions = Array.from(new Set(p.duchy.map(s => s.regionId)));
+    const placedTilesCount = duchy.filter(s => s && s.placedTile !== null).length;
+    const uniqueRegions = Array.from(new Set(duchy.map(s => s?.regionId).filter(Boolean)));
     const completedRegionsCount = uniqueRegions.filter(rid => 
-      p.duchy.filter(s => s.regionId === rid).every(s => s.placedTile !== null)
+      duchy.filter(s => s && s.regionId === rid).every(s => s && s.placedTile !== null)
     ).length;
 
     return {
@@ -136,18 +143,24 @@ export const BurgundyGameOverModal: React.FC<BurgundyGameOverModalProps> = ({ on
       stats: {
         placedTilesCount,
         completedRegionsCount,
-        soldGoodsCount: p.soldGoodsCount
+        soldGoodsCount: p.soldGoodsCount || 0
       }
     };
   }).sort((a, b) => {
-    if (b.score.total !== a.score.total) return b.score.total - a.score.total;
+    const totalA = a.score?.total || 0;
+    const totalB = b.score?.total || 0;
+    if (totalB !== totalA) return totalB - totalA;
     // 동점일 경우 남은 자원(은화+일꾼+남은상품)이 많은 플레이어 우선
-    const resA = a.player.silverlings + a.player.workers + a.player.goods.length;
-    const resB = b.player.silverlings + b.player.workers + b.player.goods.length;
+    const resA = (a.player.silverlings || 0) + (a.player.workers || 0) + (a.player.goods?.length || 0);
+    const resB = (b.player.silverlings || 0) + (b.player.workers || 0) + (b.player.goods?.length || 0);
     return resB - resA;
   });
 
-  const winner = scoredPlayers[0];
+  const winner = scoredPlayers[0] || {
+    player: { name: '승자', color: '#facc15', isAI: false, id: 'unknown' },
+    score: { total: 0, breakdown: { inGameVp: 0, silver: 0, workers: 0, goods: 0, knowledge: 0 } },
+    stats: { placedTilesCount: 0, completedRegionsCount: 0, soldGoodsCount: 0 }
+  };
 
   const handleSkipAnimation = () => {
     setStage(4);
